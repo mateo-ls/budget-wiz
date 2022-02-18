@@ -49,6 +49,7 @@ class TransactionPage(tk.Frame):
         addButton = tk.Button(self, text="Add", command=lambda: controller.show_frame("AddTransactionPage"))
         editButton = tk.Button(self, text="Edit")
         deleteButton = tk.Button(self, text="Delete")
+        thisMonthButton = tk.Button(self, text="This Month")
         
         # Image Buttons (Left and Right Arrows)
         # Getting this to work was really dumb
@@ -65,6 +66,9 @@ class TransactionPage(tk.Frame):
         rightArrowButton.image = arrowIconFlipped
 
         # Labels (text)
+        selectedMonthLabel = tk.Label(self, text="February 2022")
+        incomeLabel = tk.Label(self, text="Incomes")
+        expenseLabel = tk.Label(self, text="Expenses")
         label = tk.Label(self, text="This is Transaction Page")
 
 
@@ -75,12 +79,16 @@ class TransactionPage(tk.Frame):
         deleteButton.grid(row=0, column=7)
         editButton.grid(row=0, column=6)
         addButton.grid(row=0, column=5)
+        thisMonthButton.grid(row=1, column=4)
 
         # Image Buttons
         leftArrowButton.grid(row=1, column=1)
         rightArrowButton.grid(row=1, column=3)
 
         #Labels
+        selectedMonthLabel.grid(row=1, column=2)
+        incomeLabel.grid(row=2, column=2)
+        expenseLabel.grid(row=2, column=5)
         label.grid(row=5, column=5)
 
 
