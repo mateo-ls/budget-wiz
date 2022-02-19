@@ -5,6 +5,7 @@ from tkinter import *
 from tkcalendar import Calendar, DateEntry
 from PIL import Image, ImageTk
 import mysql.connector
+import bw_interface as bwSQL
 
 
 class MainView(tk.Tk):
@@ -167,7 +168,7 @@ class TransactionPage(tk.Frame):
         # Clears the treeview tvIncomes
         self.tvIncomes.delete(*self.tvIncomes.get_children())
         # TODO Execute SQL query here
-        rows = []#db_cursor.fetchall()
+        rows = bwSQL.incomes
         TransactionID = ""
         Date = ""
         Description = ""
@@ -187,7 +188,7 @@ class TransactionPage(tk.Frame):
         # Clears the treeview tvExpenses
         self.tvExpenses.delete(*self.tvExpenses.get_children())
         # TODO Execute SQL query here
-        rows = []#db_cursor.fetchall()
+        rows = bwSQL.expenses
         TransactionID = ""
         Date = ""
         Description = ""
