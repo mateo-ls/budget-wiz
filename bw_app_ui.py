@@ -123,9 +123,9 @@ class TransactionPage(tk.Frame):
         # Image Buttons (Left and Right Arrows)
         # Getting this to work was really dumb
         # Let's stay away from image UI elements
-        arrowImage = Image.open('resources\\arrow_icon.png')
+        arrowImage = Image.open('resources/arrow_icon.png')
         arrowImage = arrowImage.resize((30, 30), Image.ANTIALIAS)
-        arrowImageFlipped = Image.open('resources\\arrow_icon_flipped.png')
+        arrowImageFlipped = Image.open('resources/arrow_icon_flipped.png')
         arrowImageFlipped = arrowImageFlipped.resize((30, 30), Image.ANTIALIAS)
         arrowIcon = ImageTk.PhotoImage(arrowImage)
         arrowIconFlipped = ImageTk.PhotoImage(arrowImageFlipped)
@@ -215,6 +215,7 @@ class TransactionPage(tk.Frame):
         #    self.grid_columnconfigure(column, minsize=100)
         #for row in range(rowCount):
         #    self.grid_rowconfigure(row, minsize=100)
+    
     
 
     def selectRecordIncome(self, event):
@@ -363,9 +364,9 @@ class AnalyticsPage(tk.Frame):
         label = tk.Label(self, text="This is Analytics Page")
         label.pack(side="top", fill="both", expand=True)
 
-        arrowImage = Image.open('resources\\arrow_icon.png')
+        arrowImage = Image.open('resources/arrow_icon.png')
         arrowImage = arrowImage.resize((30, 30), Image.ANTIALIAS)
-        arrowImageFlipped = Image.open('resources\\arrow_icon_flipped.png')
+        arrowImageFlipped = Image.open('resources/arrow_icon_flipped.png')
         arrowImageFlipped = arrowImageFlipped.resize((30, 30), Image.ANTIALIAS)
         arrowIcon = ImageTk.PhotoImage(arrowImage)
         arrowIconFlipped = ImageTk.PhotoImage(arrowImageFlipped)
