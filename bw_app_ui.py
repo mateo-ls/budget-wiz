@@ -2,9 +2,11 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font as tkfont
 from tkinter import *
+from matplotlib import offsetbox
 from tkcalendar import Calendar, DateEntry
 from PIL import Image, ImageTk
 import mysql.connector
+import tkinter.simpledialog
 
 
 class MainView(tk.Tk):
@@ -208,11 +210,68 @@ class AddTransactionPage(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
         
+
+        # UI elements
+
+        # Buttons
         transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
+        addNewCategoryButton = tk.Button(self, text="Add New Category ...", command=self.addCategory)
+        todayDateButton = tk.Button(self, text="Today")
+        yesterdayDateButton = tk.Button(self, text="Yesterday")
+        chooseDateButton = tk.Button(self, text="Choose ...")
+        submitButton = tk.Button(self, text="Submit")
+
+        # Stores boolean flag specifying if transaction is reoccurring
+        # Flag as well as the onvalue/offvalue can be modified as we need
+        reoccurringFlag = BooleanVar()
+        reoccuringCheckbutton = tk.Checkbutton(self, text="Reoccurring Monthly?", variable=reoccurringFlag, onvalue=1, offvalue=0)
+
+        # Stores radiobutton selection value (I or E) into transactionType string variable
+        transactionType = StringVar()
+        incomeRadioButton = tk.Button(self, text="Income", variable=transactionType, value="I")
+        expenseRadioButton = tk.Button(self, text="Expense", variable=transactionType, value="E")
+
+        # Entry fields
+        dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
+        commentEntry = Entry(self, text="Comment")
+
+        # TODO pull category options into this list
+        categoryOptions = ["temp"]
+        categorySelected = StringVar()
+        categoryDropdown = OptionMenu(self, categorySelected, *categoryOptions)
+
+        # Labels
+
+        
+
+        # Layout of above UI elements
+
+        # Buttons
         transactionsButton.grid(row=0, column=0)
+        addNewCategoryButton.grid(row=3, column=2)
+        todayDateButton.grid(row=4, column=1)
+        yesterdayDateButton.grid(row=4, column=2)
+        # chooseDateButton.grid(row=4, column=3)
+        submitButton.grid(row=6, column=1)
+        incomeRadioButton.grid(row=1, column=1)
+        expenseRadioButton.grid(row=1, column=2)
+        reoccuringCheckbutton.grid(row=2, column=1)
+
+        # Entry fields
+        dateCalendarEntry.grid(row=4, column=3)
+        commentEntry.grid(row=5, column=1)
+        categoryDropdown.grid(row=3, column=1)
+
+        # Labels
+
 
         label = tk.Label(self, text="This is Add Transaction Page")
         label.grid(row=1, column=0)
+
+    
+    # Should run when addNewCategoryButton is pressed
+    def addCategory(event = None):
+        answer = AddCategoryDialog()
 
 class EditTransactionPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -238,6 +297,21 @@ class AnalyticsPage(tk.Frame):
         leftArrowButton.image = arrowIcon
         rightArrowButton = tk.Button(self, image=arrowIconFlipped, borderwidth=0)
         rightArrowButton.image = arrowIconFlipped
+
+class AddCategoryDialog(tkinter.simpledialog.Dialog):
+    def body(self, master):
+        self.transactionType = StringVar()
+        tk.Button(self, text="Income", variable=self.transactionType, value="I").grid(row=0, column=0)
+        tk.Button(self, text="Expense", variable=self.transactionType, value="E").grid(row=0, column=1)
+
+        self.categoryEntry = Entry(master)
+        self.categoryEntry.grid(row=1, column=0, columnspan=2)
+        return self.categoryEntry
+
+    def apply(self):
+        transactionTypeOutput = self.transactionType.get()
+        category = self.categoryEntry.get()
+        print(transactionTypeOutput, category)
         
 
 if __name__ == "__main__":
