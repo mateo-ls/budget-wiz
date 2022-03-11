@@ -1,3 +1,4 @@
+from os import popen
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font as tkfont
@@ -19,7 +20,7 @@ class MainView(tk.Tk):
         # SQLite Database Setup
         category_table = """
         create table if not exists category(
-            CategoryID INT NOT NULL AUTO_INCREMENT,
+            CategoryID INT NOT NULL,
             CategoryName VARCHAR(255) NOT NULL,
             Description VARCHAR(255),
             IncomeOrExpense CHAR NOT NULL,
@@ -30,7 +31,7 @@ class MainView(tk.Tk):
 
         recurring_table = """
         create table if not exists recurring(
-            RecurrenceID INT NOT NULL AUTO_INCREMENT,
+            RecurrenceID INT NOT NULL,
             StartDate DATE NOT NULL,
             EndDate DATE,
             Amount DECIMAL(38,2) NOT NULL,
@@ -45,7 +46,7 @@ class MainView(tk.Tk):
 
         trans_table = """
         create table if not exists trans(
-            TransactionID INT NOT NULL AUTO_INCREMENT,
+            TransactionID INT NOT NULL,
             InputDate DATE NOT NULL,
             Amount DECIMAL(38,2) NOT NULL,
             Description VARCHAR(45),
@@ -346,7 +347,27 @@ class AddTransactionPage(tk.Frame):
     def addCategory(event = None):
         # TODO pull category field
         # TODO INSERT into category table
-        answer = AddCategoryDialog()
+        # answer = AddCategoryDialog()
+        global pop
+        pop = Toplevel(main)
+        pop.title("Add New Category")
+        pop.geometry("500x350")
+        transactionType = StringVar()
+        tk.Radiobutton(pop, text="Income", variable=transactionType, value="I").grid(row=0, column=0)
+        tk.Radiobutton(pop, text="Expense", variable=transactionType, value="E").grid(row=0, column=1)
+
+        tk.Label(pop, text="Name:").grid(row=1, column=0)
+        categoryNameEntry = Entry(pop)
+        categoryNameEntry.grid(row=1, column=1, columnspan=2)
+
+        tk.Label(pop, text="Description:").grid(row=2, column=0)
+        categoryDescriptionEntry = Entry(pop)
+        categoryDescriptionEntry.grid(row=2, column=1, columnspan=2)
+
+        addCategorySubmitButton = tk.Button(pop, text="Submit",
+         command=lambda: [AddTransactionPage.submitCategory(transactionType.get(), categoryNameEntry.get(),
+          categoryDescriptionEntry.get()), pop.destroy()])
+        addCategorySubmitButton.grid(row=3, column=1)
 
     # Should run when submitButton() is pressed
     def submitTransaction():
@@ -361,6 +382,13 @@ class AddTransactionPage(tk.Frame):
         values = ()
         # insert row into trans table
         cur.execute(transaction, values)
+
+    def submitCategory(transactionType, Name, Description):
+        # TODO insert
+        print(transactionType)
+        print(Name)
+        print(Description)
+        return
 
 class EditTransactionPage(tk.Frame):
     # TODO setup UI elements
@@ -405,21 +433,6 @@ class AnalyticsPage(tk.Frame):
         leftArrowButton.image = arrowIcon
         rightArrowButton = tk.Button(self, image=arrowIconFlipped, borderwidth=0)
         rightArrowButton.image = arrowIconFlipped
-
-class AddCategoryDialog(tkinter.simpledialog.Dialog):
-    def body(self, master):
-        self.transactionType = StringVar()
-        tk.Button(self, text="Income", variable=self.transactionType, value="I").grid(row=0, column=0)
-        tk.Button(self, text="Expense", variable=self.transactionType, value="E").grid(row=0, column=1)
-
-        self.categoryEntry = Entry(master)
-        self.categoryEntry.grid(row=1, column=0, columnspan=2)
-        return self.categoryEntry
-
-    def apply(self):
-        transactionTypeOutput = self.transactionType.get()
-        category = self.categoryEntry.get()
-        print(transactionTypeOutput, category)
         
 
 if __name__ == "__main__":
