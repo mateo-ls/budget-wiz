@@ -229,13 +229,13 @@ class AddTransactionPage(tk.Frame):
 
         # Stores radiobutton selection value (I or E) into transactionType string variable
         transactionType = StringVar()
-        incomeRadioButton = tk.Button(self, text="Income", variable=transactionType, value="I")
-        expenseRadioButton = tk.Button(self, text="Expense", variable=transactionType, value="E")
+        incomeRadioButton = tk.Radiobutton(self, text="Income", variable=transactionType, value="I")
+        expenseRadioButton = tk.Radiobutton(self, text="Expense", variable=transactionType, value="E")
 
         # Entry fields
         dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
         commentEntry = Entry(self, text="Comment")
-
+        
         # TODO pull category options into this list
         categoryOptions = ["temp"]
         categorySelected = StringVar()
