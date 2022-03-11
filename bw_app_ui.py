@@ -19,7 +19,7 @@ class MainView(tk.Tk):
         # SQLite Database Setup
         category_table = """
         create table if not exists category(
-            CategoryID INT NOT NULL,
+            CategoryID INT NOT NULL AUTO_INCREMENT,
             CategoryName VARCHAR(255) NOT NULL,
             Description VARCHAR(255),
             IncomeOrExpense CHAR NOT NULL,
@@ -30,7 +30,7 @@ class MainView(tk.Tk):
 
         recurring_table = """
         create table if not exists recurring(
-            RecurrenceID INT NOT NULL,
+            RecurrenceID INT NOT NULL AUTO_INCREMENT,
             StartDate DATE NOT NULL,
             EndDate DATE,
             Amount DECIMAL(38,2) NOT NULL,
@@ -45,7 +45,7 @@ class MainView(tk.Tk):
 
         trans_table = """
         create table if not exists trans(
-            TransactionID INT NOT NULL,
+            TransactionID INT NOT NULL AUTO_INCREMENT,
             InputDate DATE NOT NULL,
             Amount DECIMAL(38,2) NOT NULL,
             Description VARCHAR(45),
@@ -97,6 +97,7 @@ class MainView(tk.Tk):
             frame.grid(row=0, column=0, sticky="nsew")
 
         self.show_frame("TransactionPage")
+
     def show_frame(self, page_name):
         # Show a frame for the given page name
         frame = self.frames[page_name]
@@ -116,8 +117,8 @@ class TransactionPage(tk.Frame):
         selfButton = tk.Button(self, text="Transactions")
         analyticsButton = tk.Button(self, text="Analytics")
         addButton = tk.Button(self, text="Add", command=lambda: controller.show_frame("AddTransactionPage"))
-        editButton = tk.Button(self, text="Edit")
-        deleteButton = tk.Button(self, text="Delete")
+        editButton = tk.Button(self, text="Edit", command=lambda: controller.show_frame("EditTransactionPage"))
+        deleteButton = tk.Button(self, text="Delete") # TODO add function to execute on press
         thisMonthButton = tk.Button(self, text="This Month")
         
         # Image Buttons (Left and Right Arrows)
@@ -287,7 +288,7 @@ class AddTransactionPage(tk.Frame):
         self.controller = controller
         
 
-        # UI elements
+        ## UI elements ##
 
         # Buttons
         transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
@@ -295,7 +296,7 @@ class AddTransactionPage(tk.Frame):
         todayDateButton = tk.Button(self, text="Today")
         yesterdayDateButton = tk.Button(self, text="Yesterday")
         chooseDateButton = tk.Button(self, text="Choose ...")
-        submitButton = tk.Button(self, text="Submit")
+        submitButton = tk.Button(self, text="Submit", command="submitTransaction()")
 
         # Stores boolean flag specifying if transaction is reoccurring
         # Flag as well as the onvalue/offvalue can be modified as we need
@@ -311,17 +312,14 @@ class AddTransactionPage(tk.Frame):
         dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
         commentEntry = Entry(self, text="Comment")
         
-        # TODO pull category options into this list
-        
         categoryOptions = cur.execute("select CategoryName from category").fetchall()
         categorySelected = StringVar()
         categoryDropdown = OptionMenu(self, categorySelected, *categoryOptions)
 
         # Labels
 
-        
-
-        # Layout of above UI elements
+    
+        ## Layout of above UI elements ##
 
         # Buttons
         transactionsButton.grid(row=0, column=0)
@@ -340,22 +338,55 @@ class AddTransactionPage(tk.Frame):
         categoryDropdown.grid(row=3, column=1)
 
         # Labels
-
-
         label = tk.Label(self, text="This is Add Transaction Page")
         label.grid(row=1, column=0)
 
     
     # Should run when addNewCategoryButton is pressed
     def addCategory(event = None):
+        # TODO pull category field
+        # TODO INSERT into category table
         answer = AddCategoryDialog()
 
+    # Should run when submitButton() is pressed
+    def submitTransaction():
+        # TODO check that all fields have a value
+        # TODO pull fields into variables
+        # TODO INSERT into transaction table
+        # TODO if recurring button is pressed, INSERT into recurring table
+        
+        # query
+        transaction = "INSERT into trans values (?, ?, ?, ?, ?, ?)"
+        # values to be inserted
+        values = ()
+        # insert row into trans table
+        cur.execute(transaction, values)
+
 class EditTransactionPage(tk.Frame):
+    # TODO setup UI elements
+    # TODO load selected transaction
+    # TODO model add transaction, but with UPDATE command
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
+        
+        # label.pack(side="top", fill="both", expand=True)
+        
+        ## UI Elements ##
+
+        #Buttons
+        transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
+        
+        # Labels
         label = tk.Label(self, text="This is Edit Transaction Page")
-        label.pack(side="top", fill="both", expand=True)
+
+        ## Layout of above UI elements ##
+
+        # Buttons
+        transactionsButton.grid(row=0, column=0)
+
+        # Labels
+        label.grid(row=1, column=0)
 
 class AnalyticsPage(tk.Frame):
     def __init__(self, parent, controller):
