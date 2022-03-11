@@ -7,6 +7,7 @@ from tkcalendar import Calendar, DateEntry
 from PIL import Image, ImageTk
 import mysql.connector
 import tkinter.simpledialog
+import bw_interface as bwSQL
 
 
 class MainView(tk.Tk):
@@ -169,7 +170,7 @@ class TransactionPage(tk.Frame):
         # Clears the treeview tvIncomes
         self.tvIncomes.delete(*self.tvIncomes.get_children())
         # TODO Execute SQL query here
-        rows = []#db_cursor.fetchall()
+        rows = bwSQL.incomes #db_cursor.fetchall()
         TransactionID = ""
         Date = ""
         Description = ""
@@ -181,7 +182,7 @@ class TransactionPage(tk.Frame):
             Description = row[2]
             Amount = row[3]
             Category = row[4]
-        self.tvIncomes.insert("", 'end', text=TransactionID, values=(Date, Description, Amount, Category))
+            self.tvIncomes.insert("", 'end', text=TransactionID, values=(Date, Description, Amount, Category))
 
     # When called, loads Expense data from database into tvExpenses
     def LoadExpenses(self):
@@ -189,19 +190,19 @@ class TransactionPage(tk.Frame):
         # Clears the treeview tvExpenses
         self.tvExpenses.delete(*self.tvExpenses.get_children())
         # TODO Execute SQL query here
-        rows = []#db_cursor.fetchall()
+        rows = bwSQL.expenses #db_cursor.fetchall()
         TransactionID = ""
         Date = ""
         Description = ""
         Amount = ""
         Category = ""
         for row in rows:
-            TransactionID[0]
+            TransactionID = row[0]
             Date = row[1]
             Description = row[2]
             Amount = row[3]
             Category = row[4]
-        self.tvExpenses.insert("", 'end', text=TransactionID, values=(Date, Description, Amount, Category))
+            self.tvExpenses.insert("", 'end', text=TransactionID, values=(Date, Description, Amount, Category))
 
        
 
