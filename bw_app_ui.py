@@ -230,7 +230,6 @@ class TransactionPage(tk.Frame):
     
     # When called, loads Income data from database into tvIncomes
     def LoadIncomes(self):
-        # TODO Ensure connection to database here
         # Clears the treeview tvIncomes
         self.tvIncomes.delete(*self.tvIncomes.get_children())
         
@@ -259,6 +258,7 @@ class TransactionPage(tk.Frame):
     def LoadExpenses(self):
         # Clears the treeview tvExpenses
         self.tvExpenses.delete(*self.tvExpenses.get_children())
+        
         expenses = """
         select TransactionID, InputDate, trans.Description, Amount, CategoryName 
         from trans 
@@ -312,7 +312,8 @@ class AddTransactionPage(tk.Frame):
         commentEntry = Entry(self, text="Comment")
         
         # TODO pull category options into this list
-        categoryOptions = ["temp"]
+        
+        categoryOptions = cur.execute("select CategoryName from category").fetchall()
         categorySelected = StringVar()
         categoryDropdown = OptionMenu(self, categorySelected, *categoryOptions)
 
