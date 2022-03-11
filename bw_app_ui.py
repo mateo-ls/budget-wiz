@@ -114,8 +114,16 @@ class TransactionPage(tk.Frame):
 
         # Buttons
         selfButton = tk.Button(self, text="Transactions")
-        analyticsButton = tk.Button(self, text="Analytics")
-        addButton = tk.Button(self, text="Add", command=lambda: controller.show_frame("AddTransactionPage"))
+        analyticsButton = tk.Button(
+            self, 
+            text="Analytics", 
+            command=lambda: controller.show_frame("AnalyticsPage")
+        )
+        addButton = tk.Button(
+            self,
+            text="Add", 
+            command=lambda: controller.show_frame("AddTransactionPage")
+        )
         editButton = tk.Button(self, text="Edit")
         deleteButton = tk.Button(self, text="Delete")
         thisMonthButton = tk.Button(self, text="This Month")
@@ -129,13 +137,19 @@ class TransactionPage(tk.Frame):
         arrowImageFlipped = arrowImageFlipped.resize((30, 30), Image.ANTIALIAS)
         arrowIcon = ImageTk.PhotoImage(arrowImage)
         arrowIconFlipped = ImageTk.PhotoImage(arrowImageFlipped)
-        leftArrowButton = tk.Button(self, image=arrowIcon, borderwidth=0)
+        leftArrowButton = tk.Button(self,
+            image=arrowIcon,
+            borderwidth=0,
+            command=print("Left Arrow pushed")
+        )
         leftArrowButton.image = arrowIcon
         rightArrowButton = tk.Button(self, image=arrowIconFlipped, borderwidth=0)
         rightArrowButton.image = arrowIconFlipped
 
         # Labels (text)
-        selectedMonthLabel = tk.Label(self, text="February 2022")
+        selected_month = "February 2022"
+        
+        selectedMonthLabel = tk.Label(self, text=selected_month)
         incomeLabel = tk.Label(self, text="Incomes")
         expenseLabel = tk.Label(self, text="Expenses")
         label = tk.Label(self, text="This is Transaction Page")
@@ -216,7 +230,9 @@ class TransactionPage(tk.Frame):
         #for row in range(rowCount):
         #    self.grid_rowconfigure(row, minsize=100)
     
-    
+    # When called, changes month
+    #def changeMonth(self)
+
 
     def selectRecordIncome(self, event):
         global transactionID
