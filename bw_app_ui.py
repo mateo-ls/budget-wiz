@@ -370,8 +370,6 @@ class AddTransactionPage(tk.Frame):
     # Should run when submitButton() is pressed
     def submitTransaction(date, amount, desc, ioe, rid, cid):
         # TODO check that all fields have a value
-        # TODO pull fields into variables
-        # TODO INSERT into transaction table
         # TODO if recurring button is pressed, INSERT into recurring table
         
         # query
