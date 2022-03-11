@@ -294,9 +294,6 @@ class AddTransactionPage(tk.Frame):
         # Buttons
         transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
         addNewCategoryButton = tk.Button(self, text="Add New Category ...", command=self.addCategory)
-        todayDateButton = tk.Button(self, text="Today")
-        yesterdayDateButton = tk.Button(self, text="Yesterday")
-        chooseDateButton = tk.Button(self, text="Choose ...")
         submitButton = tk.Button(self, text="Submit", command="submitTransaction()")
 
         # Stores boolean flag specifying if transaction is reoccurring
@@ -311,6 +308,8 @@ class AddTransactionPage(tk.Frame):
 
         # Entry fields
         dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
+        vcmd = (self.register(self.validateNumber))
+        amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
         commentEntry = Entry(self, text="Comment")
         
         categoryOptions = cur.execute("select CategoryName from category").fetchall()
@@ -325,17 +324,15 @@ class AddTransactionPage(tk.Frame):
         # Buttons
         transactionsButton.grid(row=0, column=0)
         addNewCategoryButton.grid(row=3, column=2)
-        todayDateButton.grid(row=4, column=1)
-        yesterdayDateButton.grid(row=4, column=2)
-        # chooseDateButton.grid(row=4, column=3)
-        submitButton.grid(row=6, column=1)
+        submitButton.grid(row=7, column=1)
         incomeRadioButton.grid(row=1, column=1)
         expenseRadioButton.grid(row=1, column=2)
         reoccuringCheckbutton.grid(row=2, column=1)
 
         # Entry fields
-        dateCalendarEntry.grid(row=4, column=3)
-        commentEntry.grid(row=5, column=1)
+        dateCalendarEntry.grid(row=4, column=1)
+        amountEntry.grid(row=5, column=1)   
+        commentEntry.grid(row=6, column=1, columnspan=2)
         categoryDropdown.grid(row=3, column=1)
 
         # Labels
@@ -389,6 +386,12 @@ class AddTransactionPage(tk.Frame):
         print(Name)
         print(Description)
         return
+    
+    def validateNumber(self, P):
+        if str.isdigit(P) or str(P) == "":
+            return True
+        else:
+            return False
 
 class EditTransactionPage(tk.Frame):
     # TODO setup UI elements
