@@ -4,17 +4,82 @@ from tkinter import font as tkfont
 from tkinter import *
 from tkcalendar import Calendar, DateEntry
 from PIL import Image, ImageTk
-import mysql.connector
-import bw_interface as bwSQL
+
+# connect to SQLite Database
+import sqlite3
+conn = sqlite3.connect('dw_data.db')
+cur = conn.cursor()
 
 
 class MainView(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
-        
+
+        # SQLite Database Setup
+        category_table = """
+        create table if not exists category(
+            CategoryID INT NOT NULL,
+            CategoryName VARCHAR(255) NOT NULL,
+            Description VARCHAR(255),
+            IncomeOrExpense CHAR NOT NULL,
+            CONSTRAINT catPK PRIMARY KEY (CategoryID)
+        );
+        """
+        cur.execute(category_table)
+
+        recurring_table = """
+        create table if not exists recurring(
+            RecurrenceID INT NOT NULL,
+            StartDate DATE NOT NULL,
+            EndDate DATE,
+            Amount DECIMAL(38,2) NOT NULL,
+            Description VARCHAR(45),
+            IncomeOrExpense CHAR NOT NULL, /* 'I' = Income, 'E' = Expense */
+            CategoryID INT NOT NULL,
+            CONSTRAINT recPK PRIMARY KEY (RecurrenceID),
+            CONSTRAINT catFK2 FOREIGN KEY (CategoryID) REFERENCES category(CategoryID)
+        );
+        """
+        cur.execute(recurring_table)
+
+        trans_table = """
+        create table if not exists trans(
+            TransactionID INT NOT NULL,
+            InputDate DATE NOT NULL,
+            Amount DECIMAL(38,2) NOT NULL,
+            Description VARCHAR(45),
+            IncomeOrExpense CHAR, /* 'I' = Income, 'E' = Expense */
+            RecurrenceID INT,
+            CategoryID INT NOT NULL,
+            CONSTRAINT transPK PRIMARY KEY (TransactionID),
+            CONSTRAINT recFK FOREIGN KEY (CategoryID) REFERENCES category(CategoryID),
+            CONSTRAINT catFK1 FOREIGN KEY (RecurrenceID) REFERENCES recurring(RecurrenceID)
+        );
+        """
+        cur.execute(trans_table)
+
+        # SAMPLE DATA
+        # TODO delete this sample data once finished
+        insert_cat = """
+        insert into category values
+        (001, "General", NULL, 'I'),
+        (002, "Groceries", "For grocery expenses", 'E'),
+        (003, "Bills", "For bill expenses", 'E');
+        """
+        insert_trans = """
+        insert into trans values
+        (001, "2022-02-16", 23.20, "allowance", 'I', NULL, 001),
+        (002, "2022-02-16", 256.99, "February groceries", 'E', NULL, 002),
+        (003, "2022-02-16", 30.00, "Joe paid me back", 'I', NULL, 001),
+        (004, "2022-02-16", 600.00, "February Rent", 'E', NULL, 003);
+        """
+        cur.execute(insert_cat)
+        cur.execute(insert_trans)
+
         # This container is where we'll stack all the frames for different pages
         # on top of each other, and the one we want to be visible will be
         # raised on top of all the others
+
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
@@ -167,8 +232,15 @@ class TransactionPage(tk.Frame):
         # TODO Ensure connection to database here
         # Clears the treeview tvIncomes
         self.tvIncomes.delete(*self.tvIncomes.get_children())
-        # TODO Execute SQL query here
-        rows = bwSQL.incomes #db_cursor.fetchall()
+        
+        income = """
+        select TransactionID, InputDate, trans.Description, Amount, CategoryName 
+        from trans 
+        inner join category using (CategoryID) 
+        where trans.IncomeOrExpense = 'I'
+        """
+
+        rows = cur.execute(income).fetchall()
         TransactionID = ""
         Date = ""
         Description = ""
@@ -184,11 +256,15 @@ class TransactionPage(tk.Frame):
 
     # When called, loads Expense data from database into tvExpenses
     def LoadExpenses(self):
-        # TODO Ensure connection to database here
         # Clears the treeview tvExpenses
         self.tvExpenses.delete(*self.tvExpenses.get_children())
-        # TODO Execute SQL query here
-        rows = bwSQL.expenses #db_cursor.fetchall()
+        expenses = """
+        select TransactionID, InputDate, trans.Description, Amount, CategoryName 
+        from trans 
+        inner join category using (CategoryID) 
+        where trans.IncomeOrExpense = 'E'
+        """
+        rows = cur.execute(expenses).fetchall()
         TransactionID = ""
         Date = ""
         Description = ""
@@ -249,3 +325,5 @@ if __name__ == "__main__":
     main.wm_geometry("800x800")
     main.wm_title("Budget Wiz 0.1")
     main.mainloop()
+
+conn.close()
