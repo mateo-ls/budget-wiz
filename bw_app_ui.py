@@ -1,3 +1,4 @@
+from os import popen
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font as tkfont
@@ -289,7 +290,6 @@ class AddTransactionPage(tk.Frame):
         todayDateButton = tk.Button(self, text="Today")
         yesterdayDateButton = tk.Button(self, text="Yesterday")
         chooseDateButton = tk.Button(self, text="Choose ...")
-        
 
         # Stores boolean flag specifying if transaction is reoccurring
         # Flag as well as the onvalue/offvalue can be modified as we need
@@ -303,6 +303,8 @@ class AddTransactionPage(tk.Frame):
 
         # Entry fields
         dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
+        vcmd = (self.register(self.validateNumber))
+        amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
         commentEntry = Entry(self, text="Comment")
         
         categoryOptions = [row[0] for row in cur.execute("select CategoryName from category;").fetchall()]
@@ -323,17 +325,15 @@ class AddTransactionPage(tk.Frame):
         # Buttons
         transactionsButton.grid(row=0, column=0)
         addNewCategoryButton.grid(row=3, column=2)
-        todayDateButton.grid(row=4, column=1)
-        yesterdayDateButton.grid(row=4, column=2)
-        # chooseDateButton.grid(row=4, column=3)
-        submitButton.grid(row=6, column=1)
+        submitButton.grid(row=7, column=1)
         incomeRadioButton.grid(row=1, column=1)
         expenseRadioButton.grid(row=1, column=2)
         reoccuringCheckbutton.grid(row=2, column=1)
 
         # Entry fields
-        dateCalendarEntry.grid(row=4, column=3)
-        commentEntry.grid(row=5, column=1)
+        dateCalendarEntry.grid(row=4, column=1)
+        amountEntry.grid(row=5, column=1)   
+        commentEntry.grid(row=6, column=1, columnspan=2)
         categoryDropdown.grid(row=3, column=1)
 
         # Labels
@@ -345,7 +345,27 @@ class AddTransactionPage(tk.Frame):
     def addCategory(event = None):
         # TODO pull category field
         # TODO INSERT into category table
-        answer = AddCategoryDialog()
+        # answer = AddCategoryDialog()
+        global pop
+        pop = Toplevel(main)
+        pop.title("Add New Category")
+        pop.geometry("500x350")
+        transactionType = StringVar()
+        tk.Radiobutton(pop, text="Income", variable=transactionType, value="I").grid(row=0, column=0)
+        tk.Radiobutton(pop, text="Expense", variable=transactionType, value="E").grid(row=0, column=1)
+
+        tk.Label(pop, text="Name:").grid(row=1, column=0)
+        categoryNameEntry = Entry(pop)
+        categoryNameEntry.grid(row=1, column=1, columnspan=2)
+
+        tk.Label(pop, text="Description:").grid(row=2, column=0)
+        categoryDescriptionEntry = Entry(pop)
+        categoryDescriptionEntry.grid(row=2, column=1, columnspan=2)
+
+        addCategorySubmitButton = tk.Button(pop, text="Submit",
+         command=lambda: [AddTransactionPage.submitCategory(transactionType.get(), categoryNameEntry.get(),
+          categoryDescriptionEntry.get()), pop.destroy()])
+        addCategorySubmitButton.grid(row=3, column=1)
 
     # Should run when submitButton() is pressed
     def submitTransaction(date, amount, desc, ioe, rid, cid):
@@ -364,6 +384,19 @@ class AddTransactionPage(tk.Frame):
         cur.execute(transaction, values)
         conn.commit()
 
+
+    def submitCategory(transactionType, Name, Description):
+        # TODO insert
+        print(transactionType)
+        print(Name)
+        print(Description)
+        return
+    
+    def validateNumber(self, P):
+        if str.isdigit(P) or str(P) == "":
+            return True
+        else:
+            return False
 
 class EditTransactionPage(tk.Frame):
     # TODO setup UI elements
@@ -408,21 +441,6 @@ class AnalyticsPage(tk.Frame):
         leftArrowButton.image = arrowIcon
         rightArrowButton = tk.Button(self, image=arrowIconFlipped, borderwidth=0)
         rightArrowButton.image = arrowIconFlipped
-
-class AddCategoryDialog(tkinter.simpledialog.Dialog):
-    def body(self, master):
-        self.transactionType = StringVar()
-        tk.Button(self, text="Income", variable=self.transactionType, value="I").grid(row=0, column=0)
-        tk.Button(self, text="Expense", variable=self.transactionType, value="E").grid(row=0, column=1)
-
-        self.categoryEntry = Entry(master)
-        self.categoryEntry.grid(row=1, column=0, columnspan=2)
-        return self.categoryEntry
-
-    def apply(self):
-        transactionTypeOutput = self.transactionType.get()
-        category = self.categoryEntry.get()
-        print(transactionTypeOutput, category)
         
 
 if __name__ == "__main__":
