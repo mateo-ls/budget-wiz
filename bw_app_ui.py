@@ -20,25 +20,24 @@ class MainView(tk.Tk):
         # SQLite Database Setup
         category_table = """
         create table if not exists category(
-            CategoryID INT NOT NULL,
+            CategoryID INTEGER PRIMARY KEY AUTOINCREMENT,
             CategoryName VARCHAR(255) NOT NULL,
             Description VARCHAR(255),
             IncomeOrExpense CHAR NOT NULL,
-            CONSTRAINT catPK PRIMARY KEY (CategoryID)
+            UNIQUE(CategoryName, IncomeOrExpense)
         );
         """
         cur.execute(category_table)
 
         recurring_table = """
         create table if not exists recurring(
-            RecurrenceID INT NOT NULL,
+            RecurrenceID INTEGER PRIMARY KEY AUTOINCREMENT,
             StartDate DATE NOT NULL,
             EndDate DATE,
             Amount DECIMAL(38,2) NOT NULL,
             Description VARCHAR(45),
             IncomeOrExpense CHAR NOT NULL, /* 'I' = Income, 'E' = Expense */
             CategoryID INT NOT NULL,
-            CONSTRAINT recPK PRIMARY KEY (RecurrenceID),
             CONSTRAINT catFK2 FOREIGN KEY (CategoryID) REFERENCES category(CategoryID)
         );
         """
@@ -46,37 +45,31 @@ class MainView(tk.Tk):
 
         trans_table = """
         create table if not exists trans(
-            TransactionID INT NOT NULL,
+            TransactionID INTEGER PRIMARY KEY AUTOINCREMENT,
             InputDate DATE NOT NULL,
             Amount DECIMAL(38,2) NOT NULL,
             Description VARCHAR(45),
             IncomeOrExpense CHAR, /* 'I' = Income, 'E' = Expense */
             RecurrenceID INT,
             CategoryID INT NOT NULL,
-            CONSTRAINT transPK PRIMARY KEY (TransactionID),
             CONSTRAINT recFK FOREIGN KEY (CategoryID) REFERENCES category(CategoryID),
             CONSTRAINT catFK1 FOREIGN KEY (RecurrenceID) REFERENCES recurring(RecurrenceID)
         );
         """
         cur.execute(trans_table)
 
-        # SAMPLE DATA
-        # TODO delete this sample data once finished
+        # DEFAULT CATEGORIES
         insert_cat = """
-        insert into category values
-        (001, "General", NULL, 'I'),
-        (002, "Groceries", "For grocery expenses", 'E'),
-        (003, "Bills", "For bill expenses", 'E');
+        insert into category (CategoryName, Description, IncomeOrExpense) values
+        ("General", NULL, 'I'),
+        ("Groceries", "For grocery expenses", 'E'),
+        ("Bills", "For bill expenses", 'E');
         """
-        insert_trans = """
-        insert into trans values
-        (001, "2022-02-16", 23.20, "allowance", 'I', NULL, 001),
-        (002, "2022-02-16", 256.99, "February groceries", 'E', NULL, 002),
-        (003, "2022-02-16", 30.00, "Joe paid me back", 'I', NULL, 001),
-        (004, "2022-02-16", 600.00, "February Rent", 'E', NULL, 003);
-        """
-        cur.execute(insert_cat)
-        cur.execute(insert_trans)
+        try:
+            cur.execute(insert_cat)
+        except:
+            pass
+        # cur.execute(insert_trans)
 
         # This container is where we'll stack all the frames for different pages
         # on top of each other, and the one we want to be visible will be
@@ -115,7 +108,7 @@ class TransactionPage(tk.Frame):
         # Date, description, amount, category
 
         # Buttons
-        selfButton = tk.Button(self, text="Transactions")
+        selfButton = tk.Button(self, text="Transactions", command=[self.LoadExpenses, self.LoadIncomes])
         analyticsButton = tk.Button(self, text="Analytics")
         addButton = tk.Button(self, text="Add", command=lambda: controller.show_frame("AddTransactionPage"))
         editButton = tk.Button(self, text="Edit", command=lambda: controller.show_frame("EditTransactionPage"))
@@ -294,7 +287,9 @@ class AddTransactionPage(tk.Frame):
         # Buttons
         transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
         addNewCategoryButton = tk.Button(self, text="Add New Category ...", command=self.addCategory)
-        submitButton = tk.Button(self, text="Submit", command="submitTransaction()")
+        todayDateButton = tk.Button(self, text="Today")
+        yesterdayDateButton = tk.Button(self, text="Yesterday")
+        chooseDateButton = tk.Button(self, text="Choose ...")
 
         # Stores boolean flag specifying if transaction is reoccurring
         # Flag as well as the onvalue/offvalue can be modified as we need
@@ -312,10 +307,16 @@ class AddTransactionPage(tk.Frame):
         amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
         commentEntry = Entry(self, text="Comment")
         
-        categoryOptions = cur.execute("select CategoryName from category").fetchall()
+        categoryOptions = [row[0] for row in cur.execute("select CategoryName from category;").fetchall()]
         categorySelected = StringVar()
         categoryDropdown = OptionMenu(self, categorySelected, *categoryOptions)
 
+        # search caetgoryOptions for categorySelected
+        # get index number
+        # add 1 add to query
+
+        # Submit
+        submitButton = tk.Button(self, text="Submit", command=lambda: AddTransactionPage.submitTransaction(dateCalendarEntry.get(), 200, commentEntry.get(), transactionType.get(), 1, categoryOptions.index(categorySelected.get())+1))
         # Labels
 
     
@@ -367,18 +368,22 @@ class AddTransactionPage(tk.Frame):
         addCategorySubmitButton.grid(row=3, column=1)
 
     # Should run when submitButton() is pressed
-    def submitTransaction():
+    def submitTransaction(date, amount, desc, ioe, rid, cid):
         # TODO check that all fields have a value
         # TODO pull fields into variables
         # TODO INSERT into transaction table
         # TODO if recurring button is pressed, INSERT into recurring table
         
         # query
-        transaction = "INSERT into trans values (?, ?, ?, ?, ?, ?)"
-        # values to be inserted
-        values = ()
-        # insert row into trans table
+        transaction = """
+        INSERT into trans (InputDate, Amount, Description, IncomeOrExpense, RecurrenceID, CategoryID)
+        values (?, ?, ?, ?, ?, ?);
+        """
+
+        values = (date, amount, desc, ioe, rid, cid)
         cur.execute(transaction, values)
+        conn.commit()
+
 
     def submitCategory(transactionType, Name, Description):
         # TODO insert
@@ -447,4 +452,5 @@ if __name__ == "__main__":
     main.wm_title("Budget Wiz 0.1")
     main.mainloop()
 
+conn.commit()
 conn.close()
