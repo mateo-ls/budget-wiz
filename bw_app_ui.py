@@ -70,6 +70,7 @@ class MainView(tk.Tk):
         (001, "General", NULL, 'I'),
         (002, "Groceries", "For grocery expenses", 'E'),
         (003, "Bills", "For bill expenses", 'E');
+        (004, "Work Salary", "For work income", 'I')
         """
         insert_trans = """
         insert into trans values
