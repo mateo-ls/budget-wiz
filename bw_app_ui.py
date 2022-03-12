@@ -99,6 +99,9 @@ class MainView(tk.Tk):
         frame = self.frames[page_name]
         frame.tkraise()
 
+    def get_page(self, page_class):
+        return self.frames[page_class]
+
 
 class TransactionPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -318,7 +321,8 @@ class AddTransactionPage(tk.Frame):
         # add 1 add to query
 
         # Submit
-        submitButton = tk.Button(self, text="Submit", command=lambda: AddTransactionPage.submitTransaction(dateCalendarEntry.get(), 200, commentEntry.get(), transactionType.get(), 1, categoryOptions.index(categorySelected.get())+1))
+        submitB = tk.Button(self, text="Submit", command=lambda: self.submitButton(dateCalendarEntry.get(), commentEntry.get(), transactionType.get(), categoryOptions, categorySelected.get()))
+        #
         # Labels
 
     
@@ -327,7 +331,7 @@ class AddTransactionPage(tk.Frame):
         # Buttons
         transactionsButton.grid(row=0, column=0)
         addNewCategoryButton.grid(row=3, column=2)
-        submitButton.grid(row=7, column=1)
+        submitB.grid(row=7, column=1)
         incomeRadioButton.grid(row=1, column=1)
         expenseRadioButton.grid(row=1, column=2)
         reoccuringCheckbutton.grid(row=2, column=1)
@@ -370,7 +374,7 @@ class AddTransactionPage(tk.Frame):
         addCategorySubmitButton.grid(row=3, column=1)
 
     # Should run when submitButton() is pressed
-    def submitTransaction(date, amount, desc, ioe, rid, cid):
+    def submitTransaction(self, date, amount, desc, ioe, rid, cid):
         # TODO check that all fields have a value
         # TODO if recurring button is pressed, INSERT into recurring table
         
@@ -397,6 +401,12 @@ class AddTransactionPage(tk.Frame):
             return True
         else:
             return False
+
+    def submitButton(self, date, comment, type, category, catSelect):
+        self.submitTransaction(date, 200, comment, type, 1, category.index(catSelect)+1)
+        page = self.controller.get_page("TransactionPage")
+        page.LoadExpenses()
+        page.LoadIncomes()
 
 class EditTransactionPage(tk.Frame):
     # TODO setup UI elements
