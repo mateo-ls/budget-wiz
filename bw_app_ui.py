@@ -407,6 +407,7 @@ class AddTransactionPage(tk.Frame):
         page = self.controller.get_page("TransactionPage")
         page.LoadExpenses()
         page.LoadIncomes()
+        self.controller.show_frame("TransactionPage")
 
 class EditTransactionPage(tk.Frame):
     # TODO setup UI elements
