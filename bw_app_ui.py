@@ -1,11 +1,15 @@
+from dataclasses import dataclass
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font as tkfont
 from tkinter import *
+#from warnings import _catch_warnings_without_records
 from matplotlib import offsetbox
 from tkcalendar import Calendar, DateEntry
 from PIL import Image, ImageTk
 import tkinter.simpledialog
+from datetime import datetime # For date object
+from dateutil.relativedelta import relativedelta # For date object arithmetic
 
 # connect to SQLite Database
 import sqlite3
@@ -66,13 +70,17 @@ class MainView(tk.Tk):
         (001, "General", NULL, 'I'),
         (002, "Groceries", "For grocery expenses", 'E'),
         (003, "Bills", "For bill expenses", 'E');
+        (004, "Work Salary", "For work income", 'I')
         """
         insert_trans = """
         insert into trans values
-        (001, "2022-02-16", 23.20, "allowance", 'I', NULL, 001),
-        (002, "2022-02-16", 256.99, "February groceries", 'E', NULL, 002),
-        (003, "2022-02-16", 30.00, "Joe paid me back", 'I', NULL, 001),
-        (004, "2022-02-16", 600.00, "February Rent", 'E', NULL, 003);
+        (001, "2022-02-16", 23.20, "Allowance", 'I', NULL, 001),
+        (002, "2022-02-18", 256.99, "February groceries", 'E', NULL, 002),
+        (003, "2022-02-25", 30.00, "Joe paid me back", 'I', NULL, 001),
+        (004, "2022-02-28", 600.00, "February Rent", 'E', NULL, 003),
+        (005, "2022-03-03", 3000.00, "Robbed local bank", 'I', NULL, 001),
+        (006, "2022-04-24", 3500.00, "Feds got me", 'E', NULL, 003),
+        (007, "2022-04-25", 2000.00, "Child support", 'E', NULL, 003);
         """
         cur.execute(insert_cat)
         cur.execute(insert_trans)
@@ -102,6 +110,9 @@ class MainView(tk.Tk):
         frame = self.frames[page_name]
         frame.tkraise()
 
+# ----- Establish Global Variable for Current Date -----
+# Link: https://www.w3schools.com/python/python_datetime.asp
+current_date = datetime.now()
 
 class TransactionPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -114,28 +125,56 @@ class TransactionPage(tk.Frame):
 
         # Buttons
         selfButton = tk.Button(self, text="Transactions")
-        analyticsButton = tk.Button(self, text="Analytics")
-        addButton = tk.Button(self, text="Add", command=lambda: controller.show_frame("AddTransactionPage"))
-        editButton = tk.Button(self, text="Edit")
+        analyticsButton = tk.Button(
+            self, 
+            text="Analytics", 
+            command=lambda: controller.show_frame("AnalyticsPage")
+        )
+        addButton = tk.Button(
+            self,
+            text="Add", 
+            command=lambda: controller.show_frame("AddTransactionPage")
+        )
+        editButton = tk.Button(
+            self, 
+            text="Edit"
+        )
         deleteButton = tk.Button(self, text="Delete")
         thisMonthButton = tk.Button(self, text="This Month")
         
         # Image Buttons (Left and Right Arrows)
         # Getting this to work was really dumb
         # Let's stay away from image UI elements
-        arrowImage = Image.open('resources\\arrow_icon.png')
+        arrowImage = Image.open('resources/arrow_icon.png')
         arrowImage = arrowImage.resize((30, 30), Image.ANTIALIAS)
-        arrowImageFlipped = Image.open('resources\\arrow_icon_flipped.png')
+        arrowImageFlipped = Image.open('resources/arrow_icon_flipped.png')
         arrowImageFlipped = arrowImageFlipped.resize((30, 30), Image.ANTIALIAS)
         arrowIcon = ImageTk.PhotoImage(arrowImage)
         arrowIconFlipped = ImageTk.PhotoImage(arrowImageFlipped)
-        leftArrowButton = tk.Button(self, image=arrowIcon, borderwidth=0)
+
+
+        # ----- Month Selection Buttons and Labels ----- 
+        month_and_year = f"{current_date.strftime('%B')} {current_date.strftime('%Y')}"
+        self.selectedMonthLabel = tk.Label(self, text=month_and_year)
+
+        leftArrowButton = tk.Button(
+            self,
+            image=arrowIcon,
+            borderwidth=0,
+            command=lambda: self.changeMonth("left")
+        )
         leftArrowButton.image = arrowIcon
-        rightArrowButton = tk.Button(self, image=arrowIconFlipped, borderwidth=0)
+
+        rightArrowButton = tk.Button(
+            self, 
+            image=arrowIconFlipped, 
+            borderwidth=0,
+            command=lambda: self.changeMonth("right")
+        )
         rightArrowButton.image = arrowIconFlipped
 
-        # Labels (text)
-        selectedMonthLabel = tk.Label(self, text="February 2022")
+
+        # ----- Other Labels -----
         incomeLabel = tk.Label(self, text="Incomes")
         expenseLabel = tk.Label(self, text="Expenses")
         label = tk.Label(self, text="This is Transaction Page")
@@ -179,7 +218,7 @@ class TransactionPage(tk.Frame):
         self.tvExpenses.bind("<<TreeviewSelect>>", self.selectRecordExpense)
 
 
-        # Establishes layout of above elements
+        # ----- Establishes layout of above elements -----
         # This is bad
         # TODO make it pretty
         # Buttons
@@ -195,7 +234,7 @@ class TransactionPage(tk.Frame):
         rightArrowButton.grid(row=1, column=3)
 
         # Labels
-        selectedMonthLabel.grid(row=1, column=2)
+        self.selectedMonthLabel.grid(row=1, column=2)
         incomeLabel.grid(row=2, column=2)
         expenseLabel.grid(row=2, column=5)
         label.grid(row=5, column=5)
@@ -204,8 +243,9 @@ class TransactionPage(tk.Frame):
         self.tvIncomes.grid(row=3, column=1, columnspan=3)
         self.tvExpenses.grid(row=3, column=5, columnspan=3)
 
-        self.LoadIncomes()
-        self.LoadExpenses()
+        # These two are needed for the initial loading to the Transactions Page
+        self.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
+        self.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
 
 
         # Sets minimun sizes for all columns or rows
@@ -216,6 +256,24 @@ class TransactionPage(tk.Frame):
         #for row in range(rowCount):
         #    self.grid_rowconfigure(row, minsize=100)
     
+    def changeMonth(self, direction):
+        global current_date # Establish that the current_data global var will be used here
+
+        if direction == "left":
+            current_date = current_date - relativedelta(months=1)
+            m_y = f"{current_date.strftime('%B')} {current_date.strftime('%Y')}"
+            self.selectedMonthLabel["text"] = m_y
+            # Update the Information from the table
+            self.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
+            self.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
+        else:
+            current_date = current_date + relativedelta(months=1)
+            m_y = f"{current_date.strftime('%B')} {current_date.strftime('%Y')}"
+            self.selectedMonthLabel["text"] = m_y
+            # Update the Information from the table
+            self.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
+            self.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
+
 
     def selectRecordIncome(self, event):
         global transactionID
@@ -229,7 +287,7 @@ class TransactionPage(tk.Frame):
 
     
     # When called, loads Income data from database into tvIncomes
-    def LoadIncomes(self):
+    def LoadIncomes(self, month, year):
         # TODO Ensure connection to database here
         # Clears the treeview tvIncomes
         self.tvIncomes.delete(*self.tvIncomes.get_children())
@@ -238,8 +296,10 @@ class TransactionPage(tk.Frame):
         select TransactionID, InputDate, trans.Description, Amount, CategoryName 
         from trans 
         inner join category using (CategoryID) 
-        where trans.IncomeOrExpense = 'I'
-        """
+        where trans.IncomeOrExpense = 'I' and
+        strftime('%m', trans.InputDate) = '{m}' and 
+        strftime('%Y', trans.InputDate) = '{y}'
+        """.format(m = month, y = year)
 
         rows = cur.execute(income).fetchall()
         TransactionID = ""
@@ -256,15 +316,18 @@ class TransactionPage(tk.Frame):
             self.tvIncomes.insert("", 'end', text=TransactionID, values=(Date, Description, Amount, Category))
 
     # When called, loads Expense data from database into tvExpenses
-    def LoadExpenses(self):
+    def LoadExpenses(self, month, year):
         # Clears the treeview tvExpenses
         self.tvExpenses.delete(*self.tvExpenses.get_children())
         expenses = """
         select TransactionID, InputDate, trans.Description, Amount, CategoryName 
         from trans 
         inner join category using (CategoryID) 
-        where trans.IncomeOrExpense = 'E'
-        """
+        where trans.IncomeOrExpense = 'E' and
+        strftime('%m', trans.InputDate) = '{m}' and
+        strftime('%Y', trans.InputDate) = '{y}'
+        """.format(m = month, y = year)
+
         rows = cur.execute(expenses).fetchall()
         TransactionID = ""
         Date = ""
@@ -363,9 +426,9 @@ class AnalyticsPage(tk.Frame):
         label = tk.Label(self, text="This is Analytics Page")
         label.pack(side="top", fill="both", expand=True)
 
-        arrowImage = Image.open('resources\\arrow_icon.png')
+        arrowImage = Image.open('resources/arrow_icon.png')
         arrowImage = arrowImage.resize((30, 30), Image.ANTIALIAS)
-        arrowImageFlipped = Image.open('resources\\arrow_icon_flipped.png')
+        arrowImageFlipped = Image.open('resources/arrow_icon_flipped.png')
         arrowImageFlipped = arrowImageFlipped.resize((30, 30), Image.ANTIALIAS)
         arrowIcon = ImageTk.PhotoImage(arrowImage)
         arrowIconFlipped = ImageTk.PhotoImage(arrowImageFlipped)
