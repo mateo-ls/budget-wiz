@@ -1,21 +1,34 @@
-# Import the required libraries
 from tkinter import *
-from tkinter import messagebox
-from tkinter import ttk
 
-# Create an instance of tkinter frame
-win= Tk()
+# --- functions ---
 
-# Set the size of the tkinter window
-win.geometry("700x350")
+def create_frame(master):
+    print("create frame")
 
-# Define a function to show the popup message
-def show_msg():
-   messagebox.showinfo("Message","Hey There! I hope you are doing well.")
+    frame = Frame(master)
 
-# Add an optional Label widget
-Label(win, text= "Welcome Folks!", font= ('Aerial 17 bold italic')).pack(pady= 30)
+    b = Button(frame, text='Do Something')
+    b.pack(pady=10)
 
-# Create a Button to display the message
-ttk.Button(win, text= "Click Here", command=show_msg).pack(pady= 20)
-win.mainloop()
+    clearall = Button(frame, text='reset', command=reset_all)
+    clearall.pack(pady=10)
+
+    return frame
+
+def reset_all():
+    global frame
+
+    frame.destroy()
+    frame = create_frame(master)
+    #frame = create_different_frame(master)
+    frame.pack()
+
+# --- main ---
+
+
+master = Tk()
+
+frame = create_frame(master)
+frame.pack()
+
+mainloop()

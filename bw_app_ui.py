@@ -13,7 +13,9 @@ import sqlite3
 conn = sqlite3.connect('dw_data.db')
 cur = conn.cursor()
 
-class MainView(tk.Tk):
+update = True
+
+class MainView(tk.Tk): 
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
@@ -89,7 +91,7 @@ class MainView(tk.Tk):
             # All frames are stacked on top of each other
             # The one on top will be the one visible
             frame.grid(row=0, column=0, sticky="nsew")
-
+        
         self.show_frame("TransactionPage")
 
     def show_frame(self, page_name):
@@ -108,7 +110,7 @@ class TransactionPage(tk.Frame):
         # Date, description, amount, category
 
         # Buttons
-        selfButton = tk.Button(self, text="Transactions", command=[self.LoadExpenses, self.LoadIncomes])
+        selfButton = tk.Button(self, text="Transactions", command=lambda: [self.LoadIncomes, self.LoadExpenses])
         analyticsButton = tk.Button(self, text="Analytics")
         addButton = tk.Button(self, text="Add", command=lambda: controller.show_frame("AddTransactionPage"))
         editButton = tk.Button(self, text="Edit", command=lambda: controller.show_frame("EditTransactionPage"))
@@ -427,7 +429,7 @@ class AnalyticsPage(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
         label = tk.Label(self, text="This is Analytics Page")
-        label.pack(side="top", fill="both", expand=True)
+        #label.pack(side="top", fill="both", expand=True)
 
         arrowImage = Image.open('resources\\arrow_icon.png')
         arrowImage = arrowImage.resize((30, 30), Image.ANTIALIAS)
@@ -449,6 +451,8 @@ if __name__ == "__main__":
     main.wm_geometry("800x800")
     main.wm_title("Budget Wiz 0.1")
     main.mainloop()
+    
+    
 
 conn.commit()
 conn.close()
