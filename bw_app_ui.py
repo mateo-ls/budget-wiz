@@ -1,5 +1,6 @@
 from os import popen
 from dataclasses import dataclass
+from time import strftime
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font as tkfont
@@ -309,7 +310,12 @@ class TransactionPage(tk.Frame):
         strftime('%Y', trans.InputDate) = '{y}'
         """.format(m = month, y = year)
 
+        print(income)
+
         rows = cur.execute(income).fetchall()
+
+        print(rows)
+
         TransactionID = ""
         Date = ""
         Description = ""
@@ -393,7 +399,7 @@ class AddTransactionPage(tk.Frame):
         # add 1 add to query
 
         # Submit
-        submitB = tk.Button(self, text="Submit", command=lambda: self.submitButton(dateCalendarEntry.get(), commentEntry.get(), transactionType.get(), categoryOptions, categorySelected.get()))
+        submitB = tk.Button(self, text="Submit", command=lambda: self.submitButton(dateCalendarEntry.get_date(), commentEntry.get(), transactionType.get(), categoryOptions, categorySelected.get()))
         #
         # Labels
 
@@ -477,8 +483,8 @@ class AddTransactionPage(tk.Frame):
     def submitButton(self, date, comment, type, category, catSelect):
         self.submitTransaction(date, 200, comment, type, 1, category.index(catSelect)+1)
         page = self.controller.get_page("TransactionPage")
-        page.LoadExpenses()
-        page.LoadIncomes()
+        page.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
+        page.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
         self.controller.show_frame("TransactionPage")
 
 class EditTransactionPage(tk.Frame):
