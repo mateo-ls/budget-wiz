@@ -26,44 +26,46 @@ conn = sqlite3.connect('dw_data.db')
 cur = conn.cursor()
 
 # initial database creation (with if conditions to uphold data integrity)
+
+
 category_table = """
 create table if not exists category(
-    CategoryID INT NOT NULL,
-    CategoryName VARCHAR(255) NOT NULL,
-    Description VARCHAR(255),
-    IncomeOrExpense CHAR NOT NULL,
-    CONSTRAINT catPK PRIMARY KEY (CategoryID)
-);
-"""
+            CategoryID INTEGER PRIMARY KEY AUTOINCREMENT,
+            CategoryName VARCHAR(255) NOT NULL,
+            Description VARCHAR(255),
+            IncomeOrExpense CHAR NOT NULL
+        );
+        """
+cur.execute(category_table)
 
 recurring_table = """
-create table if not exists recurring(
-    RecurrenceID INT NOT NULL,
-    StartDate DATE NOT NULL,
-    EndDate DATE,
-    Amount DECIMAL(38,2) NOT NULL,
-    Description VARCHAR(45),
-    IncomeOrExpense CHAR NOT NULL, /* 'I' = Income, 'E' = Expense */
-    CategoryID INT NOT NULL,
-    CONSTRAINT recPK PRIMARY KEY (RecurrenceID),
-    CONSTRAINT catFK2 FOREIGN KEY (CategoryID) REFERENCES category(CategoryID)
-);
-"""
+        create table if not exists recurring(
+            RecurrenceID INTEGER PRIMARY KEY AUTOINCREMENT,
+            StartDate DATE NOT NULL,
+            EndDate DATE,
+            Amount DECIMAL(38,2) NOT NULL,
+            Description VARCHAR(45),
+            IncomeOrExpense CHAR NOT NULL, /* 'I' = Income, 'E' = Expense */
+            CategoryID INT NOT NULL,
+            CONSTRAINT catFK2 FOREIGN KEY (CategoryID) REFERENCES category(CategoryID)
+        );
+        """
+cur.execute(recurring_table)
 
 trans_table = """
-create table if not exists trans(
-    TransactionID INT NOT NULL,
-    InputDate DATE NOT NULL,
-    Amount DECIMAL(38,2) NOT NULL,
-    Description VARCHAR(45),
-    IncomeOrExpense CHAR, /* 'I' = Income, 'E' = Expense */
-    RecurrenceID INT,
-    CategoryID INT NOT NULL,
-    CONSTRAINT transPK PRIMARY KEY (TransactionID),
-    CONSTRAINT recFK FOREIGN KEY (CategoryID) REFERENCES category(CategoryID),
-    CONSTRAINT catFK1 FOREIGN KEY (RecurrenceID) REFERENCES recurring(RecurrenceID)
-);
-"""
+        create table if not exists trans(
+            TransactionID INTEGER PRIMARY KEY AUTOINCREMENT,
+            InputDate DATE NOT NULL,
+            Amount DECIMAL(38,2) NOT NULL,
+            Description VARCHAR(45),
+            IncomeOrExpense CHAR, /* 'I' = Income, 'E' = Expense */
+            RecurrenceID INT,
+            CategoryID INT NOT NULL,
+            CONSTRAINT recFK FOREIGN KEY (CategoryID) REFERENCES category(CategoryID),
+            CONSTRAINT catFK1 FOREIGN KEY (RecurrenceID) REFERENCES recurring(RecurrenceID)
+        );
+        """
+cur.execute(trans_table)
 
 insert_cat = """
 insert into category values
@@ -71,19 +73,20 @@ insert into category values
 (002, "Groceries", "For grocery expenses", 'E'),
 (003, "Bills", "For bill expenses", 'E');
 """
-insert_trans = """
-insert into trans values
-(001, "2022-02-16", 23.20, "allowance", 'I', NULL, 001),
-(002, "2022-02-16", 256.99, "February groceries", 'E', NULL, 002),
-(003, "2022-02-16", 30.00, "Joe paid me back", 'I', NULL, 001),
-(004, "2022-02-16", 600.00, "February Rent", 'E', NULL, 003);
-"""
 
 cur.execute(category_table)
 cur.execute(recurring_table)
 cur.execute(trans_table)
-cur.execute(insert_cat)
-cur.execute(insert_trans)
+#cur.execute(insert_cat)
+
+transaction = """
+        INSERT into trans (InputDate, Amount, Description, IncomeOrExpense, RecurrenceID, CategoryID)
+        values (?, ?, ?, ?, ?, ?);
+        """
+
+values = ("2022-01-05", 200, "hello", 'E', 1, 1)
+cur.execute(transaction, values)
+conn.commit()
 
 cur.execute('select * from trans;')
 result = cur.fetchall()

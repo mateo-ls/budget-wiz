@@ -1,3 +1,4 @@
+from os import popen
 from dataclasses import dataclass
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -16,32 +17,33 @@ import sqlite3
 conn = sqlite3.connect('dw_data.db')
 cur = conn.cursor()
 
-class MainView(tk.Tk):
+update = True
+
+class MainView(tk.Tk): 
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
         # SQLite Database Setup
         category_table = """
         create table if not exists category(
-            CategoryID INT NOT NULL,
+            CategoryID INTEGER PRIMARY KEY AUTOINCREMENT,
             CategoryName VARCHAR(255) NOT NULL,
             Description VARCHAR(255),
             IncomeOrExpense CHAR NOT NULL,
-            CONSTRAINT catPK PRIMARY KEY (CategoryID)
+            UNIQUE(CategoryName, IncomeOrExpense)
         );
         """
         cur.execute(category_table)
 
         recurring_table = """
         create table if not exists recurring(
-            RecurrenceID INT NOT NULL,
+            RecurrenceID INTEGER PRIMARY KEY AUTOINCREMENT,
             StartDate DATE NOT NULL,
             EndDate DATE,
             Amount DECIMAL(38,2) NOT NULL,
             Description VARCHAR(45),
             IncomeOrExpense CHAR NOT NULL, /* 'I' = Income, 'E' = Expense */
             CategoryID INT NOT NULL,
-            CONSTRAINT recPK PRIMARY KEY (RecurrenceID),
             CONSTRAINT catFK2 FOREIGN KEY (CategoryID) REFERENCES category(CategoryID)
         );
         """
@@ -49,29 +51,27 @@ class MainView(tk.Tk):
 
         trans_table = """
         create table if not exists trans(
-            TransactionID INT NOT NULL,
+            TransactionID INTEGER PRIMARY KEY AUTOINCREMENT,
             InputDate DATE NOT NULL,
             Amount DECIMAL(38,2) NOT NULL,
             Description VARCHAR(45),
             IncomeOrExpense CHAR, /* 'I' = Income, 'E' = Expense */
             RecurrenceID INT,
             CategoryID INT NOT NULL,
-            CONSTRAINT transPK PRIMARY KEY (TransactionID),
             CONSTRAINT recFK FOREIGN KEY (CategoryID) REFERENCES category(CategoryID),
             CONSTRAINT catFK1 FOREIGN KEY (RecurrenceID) REFERENCES recurring(RecurrenceID)
         );
         """
         cur.execute(trans_table)
 
-        # SAMPLE DATA
-        # TODO delete this sample data once finished
+        # DEFAULT CATEGORIES
         insert_cat = """
-        insert into category values
-        (001, "General", NULL, 'I'),
-        (002, "Groceries", "For grocery expenses", 'E'),
-        (003, "Bills", "For bill expenses", 'E'),
-        (004, "Work Salary", "For work income", 'I');
+        insert into category (CategoryName, Description, IncomeOrExpense) values
+        ("General", NULL, 'I'),
+        ("Groceries", "For grocery expenses", 'E'),
+        ("Bills", "For bill expenses", 'E');
         """
+        
         insert_trans = """
         insert into trans values
         (001, "2022-02-16", 23.20, "Allowance", 'I', NULL, 001),
@@ -82,8 +82,11 @@ class MainView(tk.Tk):
         (006, "2022-04-24", 3500.00, "Feds got me", 'E', NULL, 003),
         (007, "2022-04-25", 2000.00, "Child support", 'E', NULL, 003);
         """
-        cur.execute(insert_cat)
-        cur.execute(insert_trans)
+        try:
+            cur.execute(insert_cat)
+        except:
+            pass
+        # cur.execute(insert_trans)
 
         # This container is where we'll stack all the frames for different pages
         # on top of each other, and the one we want to be visible will be
@@ -103,12 +106,16 @@ class MainView(tk.Tk):
             # All frames are stacked on top of each other
             # The one on top will be the one visible
             frame.grid(row=0, column=0, sticky="nsew")
-
+        
         self.show_frame("TransactionPage")
+
     def show_frame(self, page_name):
         # Show a frame for the given page name
         frame = self.frames[page_name]
         frame.tkraise()
+
+    def get_page(self, page_class):
+        return self.frames[page_class]
 
 # ----- Establish Global Variable for Current Date -----
 # Link: https://www.w3schools.com/python/python_datetime.asp
@@ -124,6 +131,7 @@ class TransactionPage(tk.Frame):
         # Date, description, amount, category
 
         # Buttons
+
         selfButton = tk.Button(self, text="Transactions")
         analyticsButton = tk.Button(
             self, 
@@ -319,6 +327,7 @@ class TransactionPage(tk.Frame):
     def LoadExpenses(self, month, year):
         # Clears the treeview tvExpenses
         self.tvExpenses.delete(*self.tvExpenses.get_children())
+        
         expenses = """
         select TransactionID, InputDate, trans.Description, Amount, CategoryName 
         from trans 
@@ -350,7 +359,7 @@ class AddTransactionPage(tk.Frame):
         self.controller = controller
         
 
-        # UI elements
+        ## UI elements ##
 
         # Buttons
         transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
@@ -358,7 +367,6 @@ class AddTransactionPage(tk.Frame):
         todayDateButton = tk.Button(self, text="Today")
         yesterdayDateButton = tk.Button(self, text="Yesterday")
         chooseDateButton = tk.Button(self, text="Choose ...")
-        submitButton = tk.Button(self, text="Submit")
 
         # Stores boolean flag specifying if transaction is reoccurring
         # Flag as well as the onvalue/offvalue can be modified as we need
@@ -372,59 +380,139 @@ class AddTransactionPage(tk.Frame):
 
         # Entry fields
         dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
+        vcmd = (self.register(self.validateNumber))
+        amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
         commentEntry = Entry(self, text="Comment")
         
-        # TODO pull category options into this list
-        categoryOptions = ["temp"]
+        categoryOptions = [row[0] for row in cur.execute("select CategoryName from category;").fetchall()]
         categorySelected = StringVar()
         categoryDropdown = OptionMenu(self, categorySelected, *categoryOptions)
 
+        # search caetgoryOptions for categorySelected
+        # get index number
+        # add 1 add to query
+
+        # Submit
+        submitB = tk.Button(self, text="Submit", command=lambda: self.submitButton(dateCalendarEntry.get(), commentEntry.get(), transactionType.get(), categoryOptions, categorySelected.get()))
+        #
         # Labels
 
-        
-
-        # Layout of above UI elements
+    
+        ## Layout of above UI elements ##
 
         # Buttons
         transactionsButton.grid(row=0, column=0)
         addNewCategoryButton.grid(row=3, column=2)
-        todayDateButton.grid(row=4, column=1)
-        yesterdayDateButton.grid(row=4, column=2)
-        # chooseDateButton.grid(row=4, column=3)
-        submitButton.grid(row=6, column=1)
+        submitB.grid(row=7, column=1)
         incomeRadioButton.grid(row=1, column=1)
         expenseRadioButton.grid(row=1, column=2)
         reoccuringCheckbutton.grid(row=2, column=1)
 
         # Entry fields
-        dateCalendarEntry.grid(row=4, column=3)
-        commentEntry.grid(row=5, column=1)
+        dateCalendarEntry.grid(row=4, column=1)
+        amountEntry.grid(row=5, column=1)   
+        commentEntry.grid(row=6, column=1, columnspan=2)
         categoryDropdown.grid(row=3, column=1)
 
         # Labels
-
-
         label = tk.Label(self, text="This is Add Transaction Page")
         label.grid(row=1, column=0)
 
     
     # Should run when addNewCategoryButton is pressed
     def addCategory(event = None):
-        answer = AddCategoryDialog()
+        # TODO pull category field
+        # TODO INSERT into category table
+        # answer = AddCategoryDialog()
+        global pop
+        pop = Toplevel(main)
+        pop.title("Add New Category")
+        pop.geometry("500x350")
+        transactionType = StringVar()
+        tk.Radiobutton(pop, text="Income", variable=transactionType, value="I").grid(row=0, column=0)
+        tk.Radiobutton(pop, text="Expense", variable=transactionType, value="E").grid(row=0, column=1)
+
+        tk.Label(pop, text="Name:").grid(row=1, column=0)
+        categoryNameEntry = Entry(pop)
+        categoryNameEntry.grid(row=1, column=1, columnspan=2)
+
+        tk.Label(pop, text="Description:").grid(row=2, column=0)
+        categoryDescriptionEntry = Entry(pop)
+        categoryDescriptionEntry.grid(row=2, column=1, columnspan=2)
+
+        addCategorySubmitButton = tk.Button(pop, text="Submit",
+         command=lambda: [AddTransactionPage.submitCategory(transactionType.get(), categoryNameEntry.get(),
+          categoryDescriptionEntry.get()), pop.destroy()])
+        addCategorySubmitButton.grid(row=3, column=1)
+
+    # Should run when submitButton() is pressed
+    def submitTransaction(self, date, amount, desc, ioe, rid, cid):
+        # TODO check that all fields have a value
+        # TODO if recurring button is pressed, INSERT into recurring table
+        
+        # query
+        transaction = """
+        INSERT into trans (InputDate, Amount, Description, IncomeOrExpense, RecurrenceID, CategoryID)
+        values (?, ?, ?, ?, ?, ?);
+        """
+
+        values = (date, amount, desc, ioe, rid, cid)
+        cur.execute(transaction, values)
+        conn.commit()
+
+
+    def submitCategory(transactionType, Name, Description):
+        # TODO insert
+        print(transactionType)
+        print(Name)
+        print(Description)
+        return
+    
+    def validateNumber(self, P):
+        if str.isdigit(P) or str(P) == "":
+            return True
+        else:
+            return False
+
+    def submitButton(self, date, comment, type, category, catSelect):
+        self.submitTransaction(date, 200, comment, type, 1, category.index(catSelect)+1)
+        page = self.controller.get_page("TransactionPage")
+        page.LoadExpenses()
+        page.LoadIncomes()
+        self.controller.show_frame("TransactionPage")
 
 class EditTransactionPage(tk.Frame):
+    # TODO setup UI elements
+    # TODO load selected transaction
+    # TODO model add transaction, but with UPDATE command
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
+        
+        # label.pack(side="top", fill="both", expand=True)
+        
+        ## UI Elements ##
+
+        #Buttons
+        transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
+        
+        # Labels
         label = tk.Label(self, text="This is Edit Transaction Page")
-        label.pack(side="top", fill="both", expand=True)
+
+        ## Layout of above UI elements ##
+
+        # Buttons
+        transactionsButton.grid(row=0, column=0)
+
+        # Labels
+        label.grid(row=1, column=0)
 
 class AnalyticsPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
         label = tk.Label(self, text="This is Analytics Page")
-        label.pack(side="top", fill="both", expand=True)
+        #label.pack(side="top", fill="both", expand=True)
 
         arrowImage = Image.open('resources/arrow_icon.png')
         arrowImage = arrowImage.resize((30, 30), Image.ANTIALIAS)
@@ -436,21 +524,6 @@ class AnalyticsPage(tk.Frame):
         leftArrowButton.image = arrowIcon
         rightArrowButton = tk.Button(self, image=arrowIconFlipped, borderwidth=0)
         rightArrowButton.image = arrowIconFlipped
-
-class AddCategoryDialog(tkinter.simpledialog.Dialog):
-    def body(self, master):
-        self.transactionType = StringVar()
-        tk.Button(self, text="Income", variable=self.transactionType, value="I").grid(row=0, column=0)
-        tk.Button(self, text="Expense", variable=self.transactionType, value="E").grid(row=0, column=1)
-
-        self.categoryEntry = Entry(master)
-        self.categoryEntry.grid(row=1, column=0, columnspan=2)
-        return self.categoryEntry
-
-    def apply(self):
-        transactionTypeOutput = self.transactionType.get()
-        category = self.categoryEntry.get()
-        print(transactionTypeOutput, category)
         
 
 if __name__ == "__main__":
@@ -461,5 +534,8 @@ if __name__ == "__main__":
     main.wm_geometry("800x800")
     main.wm_title("Budget Wiz 0.1")
     main.mainloop()
+    
+    
 
+conn.commit()
 conn.close()
