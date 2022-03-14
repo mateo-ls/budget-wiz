@@ -399,7 +399,7 @@ class AddTransactionPage(tk.Frame):
         # add 1 add to query
 
         # Submit
-        submitB = tk.Button(self, text="Submit", command=lambda: self.submitButton(dateCalendarEntry.get_date(), commentEntry.get(), transactionType.get(), categoryOptions, categorySelected.get()))
+        submitB = tk.Button(self, text="Submit", command=lambda: self.submitButton(dateCalendarEntry.get_date(), amountEntry.get(), commentEntry.get(), transactionType.get(), categoryOptions, categorySelected.get()))
         #
         # Labels
 
@@ -480,8 +480,8 @@ class AddTransactionPage(tk.Frame):
         else:
             return False
 
-    def submitButton(self, date, comment, type, category, catSelect):
-        self.submitTransaction(date, 200, comment, type, 1, category.index(catSelect)+1)
+    def submitButton(self, date, amount, comment, type, category, catSelect):
+        self.submitTransaction(date, amount, comment, type, 1, category.index(catSelect)+1)
         page = self.controller.get_page("TransactionPage")
         page.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
         page.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
