@@ -512,8 +512,20 @@ class AnalyticsPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-        label = tk.Label(self, text="This is Analytics Page")
         #label.pack(side="top", fill="both", expand=True)
+
+        transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
+        
+        # Labels
+        label = tk.Label(self, text="This is Analytics Page")
+
+        ## Layout of above UI elements ##
+
+        # Buttons
+        transactionsButton.grid(row=0, column=0)
+
+        # Labels
+        label.grid(row=1, column=0)
 
         arrowImage = Image.open('resources/arrow_icon.png')
         arrowImage = arrowImage.resize((30, 30), Image.ANTIALIAS)
