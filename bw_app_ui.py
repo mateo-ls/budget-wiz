@@ -310,12 +310,7 @@ class TransactionPage(tk.Frame):
         strftime('%Y', trans.InputDate) = '{y}'
         """.format(m = month, y = year)
 
-        print(income)
-
         rows = cur.execute(income).fetchall()
-
-        print(rows)
-
         TransactionID = ""
         Date = ""
         Description = ""
@@ -402,7 +397,7 @@ class AddTransactionPage(tk.Frame):
         submitB = tk.Button(self, text="Submit", command=lambda: self.submitButton(dateCalendarEntry.get_date(), amountEntry.get(), commentEntry.get(), transactionType.get(), categoryOptions, categorySelected.get()))
         #
         # Labels
-
+        # TODO add labels
     
         ## Layout of above UI elements ##
 
