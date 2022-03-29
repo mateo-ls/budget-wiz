@@ -131,8 +131,8 @@ class TransactionPage(tk.Frame):
         # Establishes this pages UI elements/
         # Date, description, amount, category
 
-        # Buttons
 
+        # ----- Buttons -----
         selfButton = tk.Button(self, text="Transactions")
         analyticsButton = tk.Button(
             self, 
@@ -151,7 +151,8 @@ class TransactionPage(tk.Frame):
         deleteButton = tk.Button(self, text="Delete")
         thisMonthButton = tk.Button(self, text="This Month")
         
-        # Image Buttons (Left and Right Arrows)
+
+        # ----- Upload Images for Left and Right Arrows -----
         # Getting this to work was really dumb
         # Let's stay away from image UI elements
         arrowImage = Image.open('resources/arrow_icon.png')
@@ -181,6 +182,12 @@ class TransactionPage(tk.Frame):
             command=lambda: self.changeMonth("right")
         )
         rightArrowButton.image = arrowIconFlipped
+
+        thisMonthButton = tk.Button(
+            self, 
+            text="This Month",
+            command=lambda: self.changeMonth("current")
+        )
 
 
         # ----- Other Labels -----
@@ -270,18 +277,16 @@ class TransactionPage(tk.Frame):
 
         if direction == "left":
             current_date = current_date - relativedelta(months=1)
-            m_y = f"{current_date.strftime('%B')} {current_date.strftime('%Y')}"
-            self.selectedMonthLabel["text"] = m_y
-            # Update the Information from the table
-            self.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
-            self.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
-        else:
+        elif direction == "right":
             current_date = current_date + relativedelta(months=1)
-            m_y = f"{current_date.strftime('%B')} {current_date.strftime('%Y')}"
-            self.selectedMonthLabel["text"] = m_y
-            # Update the Information from the table
-            self.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
-            self.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
+        else: 
+            current_date = datetime.now()
+
+        # Update the selectedMonthLabel and Incomes & Expenses Table
+        m_y = f"{current_date.strftime('%B')} {current_date.strftime('%Y')}"
+        self.selectedMonthLabel["text"] = m_y
+        self.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
+        self.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
 
 
     def selectRecordIncome(self, event):
