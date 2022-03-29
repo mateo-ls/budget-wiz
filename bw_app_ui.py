@@ -132,7 +132,7 @@ class TransactionPage(tk.Frame):
         # Date, description, amount, category
 
 
-        # ----- Buttons -----
+        # ----- Navigation and Add/Edit/Delete Buttons -----
         selfButton = tk.Button(self, text="Transactions")
         analyticsButton = tk.Button(
             self, 
@@ -149,7 +149,6 @@ class TransactionPage(tk.Frame):
             text="Edit"
         )
         deleteButton = tk.Button(self, text="Delete")
-        thisMonthButton = tk.Button(self, text="This Month")
         
 
         # ----- Upload Images for Left and Right Arrows -----
@@ -189,6 +188,14 @@ class TransactionPage(tk.Frame):
             command=lambda: self.changeMonth("current")
         )
 
+        # ----- Networth Button and Label
+        calculateNetWorth = tk.Button(
+            self
+
+        )
+        netWorth = tk.Label(
+            self
+        )
 
         # ----- Other Labels -----
         incomeLabel = tk.Label(self, text="Incomes")
