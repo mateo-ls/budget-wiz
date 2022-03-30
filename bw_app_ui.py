@@ -518,6 +518,23 @@ class EditTransactionPage(tk.Frame):
         # Labels
         label.grid(row=1, column=0)
 
+        
+    def UpdateTrans(self, date, amount, desc, ioe, rid, cid):
+        query = """
+        UPDATE trans
+        SET 
+            InputDate = ?, 
+            Amount = ?, 
+            Description = ?, 
+            IncomeOrExpense = ?, 
+            RecurrenceID = ?,
+            CategoryID = ?
+        WHERE TransactionID = ?;
+        """
+        # uses global variable for transactionID
+        values = (date, amount, desc, ioe, rid, cid, transactionID)
+        cur.execute(query, values)
+
 class AnalyticsPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
