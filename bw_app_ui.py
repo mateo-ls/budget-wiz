@@ -30,6 +30,7 @@ update = True
 # TODO (low priority) delete custom category
 # TODO net worth
 # TODO recurring transaction
+# TODO add category functionality
 
 class MainView(tk.Tk): 
     def __init__(self, *args, **kwargs):
