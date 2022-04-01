@@ -559,6 +559,8 @@ class EditTransactionPage(tk.Frame):
         # Labels
         label = tk.Label(self, text="This is Add Transaction Page")
         label.grid(row=1, column=0)
+
+        x = self.PullTrans()
     
     # Should run when addNewCategoryButton is pressed
     def addCategory(event = None):
@@ -620,13 +622,20 @@ class EditTransactionPage(tk.Frame):
         page.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
         page.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
         self.controller.show_frame("TransactionPage")
-        
+
+    # function pulls and returns a tuple of all the values in the trans table
+    # with global transactionID
     def PullTrans(self):
+        ## TEST CASE (Do not delete) ##
+        global transactionID
+        transactionID = 1
+        
         query = """
         SELECT * from trans
         WHERE TransactionID = ?;
         """
-        x = cur.execute(query, transactionID).fetchall()
+        x = cur.execute(query, [transactionID]).fetchall()[0]
+        print(x)
         return x
       
     def UpdateTrans(self, date, amount, desc, ioe, rid, cid):
