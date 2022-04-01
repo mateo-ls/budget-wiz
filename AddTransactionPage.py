@@ -28,31 +28,39 @@ class AddTransactionPage(tk.Frame):
 
         # Stores boolean flag specifying if transaction is reoccurring
         # Flag as well as the onvalue/offvalue can be modified as we need
-        reoccurringFlag = BooleanVar()
-        reoccuringCheckbutton = tk.Checkbutton(self, text="Reoccurring Monthly?", variable=reoccurringFlag, onvalue=1, offvalue=0)
+        self.reoccurringFlag = BooleanVar()
+        reoccuringCheckbutton = tk.Checkbutton(self, text="Reoccurring Monthly?", variable=self.reoccurringFlag, onvalue=1, offvalue=0)
 
         # Stores radiobutton selection value (I or E) into transactionType string variable
-        transactionType = StringVar()
-        incomeRadioButton = tk.Radiobutton(self, text="Income", variable=transactionType, value="I")
-        expenseRadioButton = tk.Radiobutton(self, text="Expense", variable=transactionType, value="E")
+        self.transactionType = StringVar()
+        self.transactionType.trace("w", self.validateSubmit)
+        incomeRadioButton = tk.Radiobutton(self, text="Income", variable=self.transactionType, value="I")
+        expenseRadioButton = tk.Radiobutton(self, text="Expense", variable=self.transactionType, value="E")
 
         # Entry fields
         dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
         vcmd = (self.register(self.validateNumber))
-        amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
-        commentEntry = Entry(self, text="Comment")
+
+        self.amountVar = StringVar()
+        self.amountVar.trace("w", self.validateSubmit)
+        amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'), textvariable=self.amountVar)
+
+        self.commentVar = StringVar()
+        self.commentVar.trace("w", self.validateSubmit)
+        commentEntry = Entry(self, text="Comment", textvariable=self.commentVar)
         
         categoryOptions = [row[0] for row in config.cur.execute("select CategoryName from category;").fetchall()]
         print(categoryOptions)
-        categorySelected = StringVar()
-        categoryDropdown = OptionMenu(self, categorySelected, *categoryOptions)
+        self.categorySelected = StringVar()
+        self.categorySelected.trace("w", self.validateSubmit)
+        categoryDropdown = OptionMenu(self, self.categorySelected, *categoryOptions)
 
-        # search caetgoryOptions for categorySelected
+        # search caetgoryOptions for self.categorySelected
         # get index number
         # add 1 add to query
 
         # Submit
-        submitB = tk.Button(self, text="Submit", command=lambda: self.submitButton(dateCalendarEntry.get_date(), amountEntry.get(), commentEntry.get(), transactionType.get(), categoryOptions, categorySelected.get()))
+        self.submitB = tk.Button(self, text="Submit", state='disabled', command=lambda: self.submitButton(dateCalendarEntry.get_date(), amountEntry.get(), commentEntry.get(), self.transactionType.get(), categoryOptions, self.categorySelected.get()))
         #
         # Labels
         # TODO add labels
@@ -65,7 +73,7 @@ class AddTransactionPage(tk.Frame):
         # Buttons
         transactionsButton.grid(row=0, column=0)
         addNewCategoryButton.grid(row=3, column=2)
-        submitB.grid(row=7, column=1)
+        self.submitB.grid(row=7, column=1)
         incomeRadioButton.grid(row=1, column=1)
         expenseRadioButton.grid(row=1, column=2)
         reoccuringCheckbutton.grid(row=2, column=1)
@@ -81,6 +89,15 @@ class AddTransactionPage(tk.Frame):
         categoryLabel.grid(row=3, column=0)
         descriptionLabel.grid(row=6, column=0)
 
+    def validateSubmit(self, *args):
+        a = self.transactionType.get()
+        b = self.amountVar.get()
+        c = self.commentVar.get()
+        d = self.categorySelected.get()
+        if a and b and c and d:
+            self.submitB.config(state='normal')
+        else:
+            self.submitB.config(state='disabled')
     
     # Should run when addNewCategoryButton is pressed
     def addCategory(event = None):
