@@ -18,7 +18,7 @@ import sqlite3
 conn = sqlite3.connect('dw_data.db')
 cur = conn.cursor()
 
-update = True
+global transactionID
 
 # Sprint 3
 # TODO add labels to the add transaction page
@@ -601,7 +601,6 @@ class EditTransactionPage(tk.Frame):
         cur.execute(transaction, values)
         conn.commit()
 
-
     def submitCategory(transactionType, Name, Description):
         # TODO insert
         print(transactionType)
@@ -622,6 +621,14 @@ class EditTransactionPage(tk.Frame):
         page.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
         self.controller.show_frame("TransactionPage")
         
+    def PullTrans(self):
+        query = """
+        SELECT * from trans
+        WHERE TransactionID = ?;
+        """
+        x = cur.execute(query, transactionID).fetchall()
+        return x
+      
     def UpdateTrans(self, date, amount, desc, ioe, rid, cid):
         query = """
         UPDATE trans
@@ -637,6 +644,7 @@ class EditTransactionPage(tk.Frame):
         # uses global variable for transactionID
         values = (date, amount, desc, ioe, rid, cid, transactionID)
         cur.execute(query, values)
+
 
 class AnalyticsPage(tk.Frame):
     def __init__(self, parent, controller):
