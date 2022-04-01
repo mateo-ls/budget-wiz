@@ -7,6 +7,7 @@ from tkinter import font as tkfont
 from tkinter import *
 #from warnings import _catch_warnings_without_records
 from matplotlib import offsetbox
+from numpy import gradient
 from tkcalendar import Calendar, DateEntry
 from PIL import Image, ImageTk
 import tkinter.simpledialog
@@ -95,11 +96,11 @@ class MainView(tk.Tk):
         (006, "2022-04-24", 3500.00, "Feds got me", 'E', NULL, 003),
         (007, "2022-04-25", 2000.00, "Child support", 'E', NULL, 003);
         """
-        try:
-            cur.execute(insert_cat)
-        except:
-            pass
-        # cur.execute(insert_trans)
+        # try:
+        #     cur.execute(insert_cat)
+        #     cur.execute(insert_trans)
+        # except:
+        #     pass
 
         # This container is where we'll stack all the frames for different pages
         # on top of each other, and the one we want to be visible will be
@@ -143,8 +144,8 @@ class TransactionPage(tk.Frame):
         # Establishes this pages UI elements/
         # Date, description, amount, category
 
-        # Buttons
 
+        # ----- Navigation and Add/Edit/Delete Buttons -----
         selfButton = tk.Button(self, text="Transactions")
         analyticsButton = tk.Button(
             self, 
@@ -162,9 +163,9 @@ class TransactionPage(tk.Frame):
             command=lambda: controller.show_frame("EditTransactionPage")
         )
         deleteButton = tk.Button(self, text="Delete")
-        thisMonthButton = tk.Button(self, text="This Month")
         
-        # Image Buttons (Left and Right Arrows)
+
+        # ----- Upload Images for Left and Right Arrows -----
         # Getting this to work was really dumb
         # Let's stay away from image UI elements
         arrowImage = Image.open('resources/arrow_icon.png')
@@ -195,6 +196,22 @@ class TransactionPage(tk.Frame):
         )
         rightArrowButton.image = arrowIconFlipped
 
+        thisMonthButton = tk.Button(
+            self, 
+            text="This Month",
+            command=lambda: self.changeMonth("current")
+        )
+
+        # ----- Networth Button and Label -----
+        calculateNetWorth = tk.Button(
+            self,
+            text="Networth",
+            command=lambda: self.calculateNetWorth()
+
+        )
+        netWorth = tk.Label(
+            self
+        )
 
         # ----- Other Labels -----
         incomeLabel = tk.Label(self, text="Incomes")
@@ -250,6 +267,8 @@ class TransactionPage(tk.Frame):
         addButton.grid(row=0, column=5)
         thisMonthButton.grid(row=1, column=5)
 
+        calculateNetWorth.grid(row=1, column=6) # <- This is temporary
+
         # Image Buttons
         leftArrowButton.grid(row=1, column=1)
         rightArrowButton.grid(row=1, column=3)
@@ -281,18 +300,16 @@ class TransactionPage(tk.Frame):
 
         if direction == "left":
             current_date = current_date - relativedelta(months=1)
-            m_y = f"{current_date.strftime('%B')} {current_date.strftime('%Y')}"
-            self.selectedMonthLabel["text"] = m_y
-            # Update the Information from the table
-            self.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
-            self.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
-        else:
+        elif direction == "right":
             current_date = current_date + relativedelta(months=1)
-            m_y = f"{current_date.strftime('%B')} {current_date.strftime('%Y')}"
-            self.selectedMonthLabel["text"] = m_y
-            # Update the Information from the table
-            self.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
-            self.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
+        else: 
+            current_date = datetime.now()
+
+        # Update the selectedMonthLabel and Incomes & Expenses Table
+        m_y = f"{current_date.strftime('%B')} {current_date.strftime('%Y')}"
+        self.selectedMonthLabel["text"] = m_y
+        self.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
+        self.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
 
 
     def selectRecordIncome(self, event):
@@ -305,6 +322,56 @@ class TransactionPage(tk.Frame):
         transactionID = self.tvExpenses.selection()[0]
         return transactionID
 
+    def calculateNetWorth(self, **kwargs):
+        global current_date # Establish that the current_data global var will be used here
+        option = ""
+
+        if option == 'month': # For by-month net worth
+            month = current_date.strftime('%m')
+            year = current_date.strftime('%Y')
+
+            grab_income = """
+            select sum(Amount)
+            from trans 
+            where IncomeOrExpense='I'
+            and month(InputDate)={m}
+            and year(InputDate)={y};
+            """.format(m = month, y = year)
+
+            grab_expense = """
+            select sum(Amount) 
+            from trans 
+            where IncomeOrExpense='E'            
+            and month(InputDate)={m}
+            and year(InputDate)={y};
+            """.format(m = month, y = year)
+        else: # For total net worth
+            grab_income = """
+            select sum(Amount)
+            from trans 
+            where IncomeOrExpense='I';
+            """
+
+            grab_expense = """
+            select sum(Amount) 
+            from trans 
+            where IncomeOrExpense='E';
+            """
+
+        total_income_list = cur.execute(grab_income).fetchall()
+        total_expense_list = cur.execute(grab_expense).fetchall()
+        
+        total_income = 0
+        total_expense = 0
+
+        for x in total_income_list:
+            total_income = x[0]
+
+        for x in total_expense_list:
+            total_expense = x[0]
+
+        net_worth = total_income - total_expense
+        print(net_worth)
     
     # When called, loads Income data from database into tvIncomes
     def LoadIncomes(self, month, year):
