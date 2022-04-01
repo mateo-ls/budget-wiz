@@ -7,6 +7,7 @@ from tkinter import font as tkfont
 from tkinter import *
 #from warnings import _catch_warnings_without_records
 from matplotlib import offsetbox
+from numpy import gradient
 from tkcalendar import Calendar, DateEntry
 from PIL import Image, ImageTk
 import tkinter.simpledialog
@@ -85,6 +86,7 @@ class MainView(tk.Tk):
         """
         try:
             cur.execute(insert_cat)
+            cur.execute(insert_trans)
         except:
             pass
         # cur.execute(insert_trans)
@@ -188,9 +190,11 @@ class TransactionPage(tk.Frame):
             command=lambda: self.changeMonth("current")
         )
 
-        # ----- Networth Button and Label
+        # ----- Networth Button and Label -----
         calculateNetWorth = tk.Button(
-            self
+            self,
+            text="Networth",
+            command=lambda: self
 
         )
         netWorth = tk.Label(
@@ -306,6 +310,21 @@ class TransactionPage(tk.Frame):
         transactionID = self.tvExpenses.selection()[0]
         return transactionID
 
+    def calculateNetWorth(self):
+        grab_income = """
+        select sum(amount)
+        from trans 
+        where IncomeOrExpense='I'
+        """
+
+        grab_expense = """
+        select sum(amount) 
+        from trans 
+        where IncomeOrExpense='E'
+        """
+
+        total_income = cur.execute(grab_income).fetchall()
+        total_expense = cur.execute(grab_expense).fetchall()
     
     # When called, loads Income data from database into tvIncomes
     def LoadIncomes(self, month, year):
