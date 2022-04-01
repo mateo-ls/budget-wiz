@@ -157,7 +157,8 @@ class TransactionPage(tk.Frame):
         )
         editButton = tk.Button(
             self, 
-            text="Edit"
+            text="Edit",
+            command=lambda: controller.show_frame("EditTransactionPage")
         )
         deleteButton = tk.Button(self, text="Delete")
         thisMonthButton = tk.Button(self, text="This Month")
@@ -197,7 +198,6 @@ class TransactionPage(tk.Frame):
         # ----- Other Labels -----
         incomeLabel = tk.Label(self, text="Incomes")
         expenseLabel = tk.Label(self, text="Expenses")
-        label = tk.Label(self, text="This is Transaction Page")
 
         # Incomes Treeview
         columns = ("#1", "#2", "#3", "#4")
@@ -257,7 +257,6 @@ class TransactionPage(tk.Frame):
         self.selectedMonthLabel.grid(row=1, column=2)
         incomeLabel.grid(row=2, column=2)
         expenseLabel.grid(row=2, column=5)
-        label.grid(row=5, column=5)
 
         # Treeviews
         self.tvIncomes.grid(row=3, column=1, columnspan=3)
@@ -408,6 +407,9 @@ class AddTransactionPage(tk.Frame):
         #
         # Labels
         # TODO add labels
+        amountLabel = Label(self, text="Amount: ")
+        descriptionLabel = Label(self, text="Description: ")
+        categoryLabel = Label(self, text="Category: ")
     
         ## Layout of above UI elements ##
 
@@ -426,8 +428,9 @@ class AddTransactionPage(tk.Frame):
         categoryDropdown.grid(row=3, column=1)
 
         # Labels
-        label = tk.Label(self, text="This is Add Transaction Page")
-        label.grid(row=1, column=0)
+        amountLabel.grid(row=5, column=0)
+        categoryLabel.grid(row=3, column=0)
+        descriptionLabel.grid(row=6, column=0)
 
     
     # Should run when addNewCategoryButton is pressed
@@ -493,31 +496,131 @@ class AddTransactionPage(tk.Frame):
         self.controller.show_frame("TransactionPage")
 
 class EditTransactionPage(tk.Frame):
-    # TODO setup UI elements
-    # TODO load selected transaction
-    # TODO model add transaction, but with UPDATE command
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
         
-        # label.pack(side="top", fill="both", expand=True)
-        
-        ## UI Elements ##
 
-        #Buttons
+        ## UI elements ##
+
+        # Buttons
         transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
-        
-        # Labels
-        label = tk.Label(self, text="This is Edit Transaction Page")
+        addNewCategoryButton = tk.Button(self, text="Add New Category ...", command=self.addCategory)
+        todayDateButton = tk.Button(self, text="Today")
+        yesterdayDateButton = tk.Button(self, text="Yesterday")
+        chooseDateButton = tk.Button(self, text="Choose ...")
 
+        # Stores boolean flag specifying if transaction is reoccurring
+        # Flag as well as the onvalue/offvalue can be modified as we need
+        reoccurringFlag = BooleanVar()
+        reoccuringCheckbutton = tk.Checkbutton(self, text="Reoccurring Monthly?", variable=reoccurringFlag, onvalue=1, offvalue=0)
+
+        # Stores radiobutton selection value (I or E) into transactionType string variable
+        transactionType = StringVar()
+        incomeRadioButton = tk.Radiobutton(self, text="Income", variable=transactionType, value="I")
+        expenseRadioButton = tk.Radiobutton(self, text="Expense", variable=transactionType, value="E")
+
+        # Entry fields
+        dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
+        vcmd = (self.register(self.validateNumber))
+        amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
+        commentEntry = Entry(self, text="Comment")
+        
+        categoryOptions = [row[0] for row in cur.execute("select CategoryName from category;").fetchall()]
+        categorySelected = StringVar()
+        categoryDropdown = OptionMenu(self, categorySelected, *categoryOptions)
+
+        # search caetgoryOptions for categorySelected
+        # get index number
+        # add 1 add to query
+
+        # Submit
+        submitB = tk.Button(self, text="Submit", command=lambda: self.submitButton(dateCalendarEntry.get_date(), amountEntry.get(), commentEntry.get(), transactionType.get(), categoryOptions, categorySelected.get()))
+        #
+        # Labels
+        # TODO add labels
+    
         ## Layout of above UI elements ##
 
         # Buttons
         transactionsButton.grid(row=0, column=0)
+        addNewCategoryButton.grid(row=3, column=2)
+        submitB.grid(row=7, column=1)
+        incomeRadioButton.grid(row=1, column=1)
+        expenseRadioButton.grid(row=1, column=2)
+        reoccuringCheckbutton.grid(row=2, column=1)
+
+        # Entry fields
+        dateCalendarEntry.grid(row=4, column=1)
+        amountEntry.grid(row=5, column=1)   
+        commentEntry.grid(row=6, column=1, columnspan=2)
+        categoryDropdown.grid(row=3, column=1)
 
         # Labels
+        label = tk.Label(self, text="This is Add Transaction Page")
         label.grid(row=1, column=0)
+    
+    # Should run when addNewCategoryButton is pressed
+    def addCategory(event = None):
+        # TODO pull category field
+        # TODO INSERT into category table
+        # answer = AddCategoryDialog()
+        global pop
+        pop = Toplevel(main)
+        pop.title("Add New Category")
+        pop.geometry("500x350")
+        transactionType = StringVar()
+        tk.Radiobutton(pop, text="Income", variable=transactionType, value="I").grid(row=0, column=0)
+        tk.Radiobutton(pop, text="Expense", variable=transactionType, value="E").grid(row=0, column=1)
 
+        tk.Label(pop, text="Name:").grid(row=1, column=0)
+        categoryNameEntry = Entry(pop)
+        categoryNameEntry.grid(row=1, column=1, columnspan=2)
+
+        tk.Label(pop, text="Description:").grid(row=2, column=0)
+        categoryDescriptionEntry = Entry(pop)
+        categoryDescriptionEntry.grid(row=2, column=1, columnspan=2)
+
+        addCategorySubmitButton = tk.Button(pop, text="Submit",
+         command=lambda: [AddTransactionPage.submitCategory(transactionType.get(), categoryNameEntry.get(),
+          categoryDescriptionEntry.get()), pop.destroy()])
+        addCategorySubmitButton.grid(row=3, column=1)
+
+    # Should run when submitButton() is pressed
+    def submitTransaction(self, date, amount, desc, ioe, rid, cid):
+        # TODO check that all fields have a value
+        # TODO if recurring button is pressed, INSERT into recurring table
+        
+        # query
+        transaction = """
+        INSERT into trans (InputDate, Amount, Description, IncomeOrExpense, RecurrenceID, CategoryID)
+        values (?, ?, ?, ?, ?, ?);
+        """
+
+        values = (date, amount, desc, ioe, rid, cid)
+        cur.execute(transaction, values)
+        conn.commit()
+
+
+    def submitCategory(transactionType, Name, Description):
+        # TODO insert
+        print(transactionType)
+        print(Name)
+        print(Description)
+        return
+    
+    def validateNumber(self, P):
+        if str.isdigit(P) or str(P) == "":
+            return True
+        else:
+            return False
+
+    def submitButton(self, date, amount, comment, type, category, catSelect):
+        self.submitTransaction(date, amount, comment, type, 1, category.index(catSelect)+1)
+        page = self.controller.get_page("TransactionPage")
+        page.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
+        page.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
+        self.controller.show_frame("TransactionPage")
         
     def UpdateTrans(self, date, amount, desc, ioe, rid, cid):
         query = """
@@ -539,31 +642,75 @@ class AnalyticsPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-        #label.pack(side="top", fill="both", expand=True)
-
-        transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
-        
-        # Labels
-        label = tk.Label(self, text="This is Analytics Page")
-
-        ## Layout of above UI elements ##
 
         # Buttons
-        transactionsButton.grid(row=0, column=0)
+        selfButton = tk.Button(
+            self, 
+            text="Transactions", 
+            command=lambda: controller.show_frame("TransactionPage"))
+        analyticsButton = tk.Button(self, text="Analytics")
 
-        # Labels
-        label.grid(row=1, column=0)
-
+        thisMonthButton = tk.Button(self, text="This Month")
+        
         arrowImage = Image.open('resources/arrow_icon.png')
         arrowImage = arrowImage.resize((30, 30), Image.ANTIALIAS)
         arrowImageFlipped = Image.open('resources/arrow_icon_flipped.png')
         arrowImageFlipped = arrowImageFlipped.resize((30, 30), Image.ANTIALIAS)
         arrowIcon = ImageTk.PhotoImage(arrowImage)
         arrowIconFlipped = ImageTk.PhotoImage(arrowImageFlipped)
-        leftArrowButton = tk.Button(self, image=arrowIcon, borderwidth=0)
+
+
+        # ----- Month Selection Buttons and Labels ----- 
+        month_and_year = f"{current_date.strftime('%B')} {current_date.strftime('%Y')}"
+        self.selectedMonthLabel = tk.Label(self, text=month_and_year)
+
+        leftArrowButton = tk.Button(
+            self,
+            image=arrowIcon,
+            borderwidth=0,
+            command=lambda: self.changeMonth("left")
+        )
         leftArrowButton.image = arrowIcon
-        rightArrowButton = tk.Button(self, image=arrowIconFlipped, borderwidth=0)
+
+        rightArrowButton = tk.Button(
+            self, 
+            image=arrowIconFlipped, 
+            borderwidth=0,
+            command=lambda: self.changeMonth("right")
+        )
         rightArrowButton.image = arrowIconFlipped
+
+        # Labels
+
+        # Categories Treeview
+        columns = ("#1", "#2")
+        self.tvCategoryTotals = ttk.Treeview(self, show="headings", height="5", columns=columns)
+        self.tvCategoryTotals.heading("#1", text="Category", anchor="center")
+        self.tvCategoryTotals.column("#1", width=80, anchor="center", stretch=True)
+        self.tvCategoryTotals.heading("#2", text="Amount", anchor="center")
+        self.tvCategoryTotals.column("#2", width=80, anchor="center", stretch=True)
+        
+        vsb = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tvCategoryTotals.yview)
+        self.tvCategoryTotals.configure(yscroll=vsb.set)
+        # Don't know if we need to select anything for this treeview
+        # self.tvCategoryTotals.bind("<<TreeviewSelect>>", s)
+
+        ## Layout
+
+        # Buttons
+        selfButton.grid(row=0, column=0)
+        analyticsButton.grid(row=0, column=1)
+        thisMonthButton.grid(row=1, column=5)
+
+        # Image Buttons
+        leftArrowButton.grid(row=1, column=1)
+        rightArrowButton.grid(row=1, column=3)
+
+        # Labels
+        self.selectedMonthLabel.grid(row=1, column=2)
+
+        # Treeviews
+        self.tvCategoryTotals.grid(row=3, column=1, columnspan=3, rowspan=2)
         
 
 if __name__ == "__main__":
