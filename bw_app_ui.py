@@ -20,6 +20,17 @@ cur = conn.cursor()
 
 update = True
 
+# Sprint 3
+# TODO add labels to the add transaction page
+# TODO edit transaction
+# TODO add transaction
+# TODO refresh category dropdown as income/expense
+# TODO finish analytics UI
+# TODO add custom category functionality
+# TODO (low priority) delete custom category
+# TODO net worth
+# TODO recurring transaction
+
 class MainView(tk.Tk): 
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
@@ -296,7 +307,6 @@ class TransactionPage(tk.Frame):
     
     # When called, loads Income data from database into tvIncomes
     def LoadIncomes(self, month, year):
-        # TODO Ensure connection to database here
         # Clears the treeview tvIncomes
         self.tvIncomes.delete(*self.tvIncomes.get_children())
         
@@ -549,7 +559,6 @@ class EditTransactionPage(tk.Frame):
         # Labels
         label = tk.Label(self, text="This is Add Transaction Page")
         label.grid(row=1, column=0)
-
     
     # Should run when addNewCategoryButton is pressed
     def addCategory(event = None):
@@ -612,6 +621,22 @@ class EditTransactionPage(tk.Frame):
         page.LoadIncomes(current_date.strftime('%m'), current_date.strftime('%Y'))
         page.LoadExpenses(current_date.strftime('%m'), current_date.strftime('%Y'))
         self.controller.show_frame("TransactionPage")
+        
+    def UpdateTrans(self, date, amount, desc, ioe, rid, cid):
+        query = """
+        UPDATE trans
+        SET 
+            InputDate = ?, 
+            Amount = ?, 
+            Description = ?, 
+            IncomeOrExpense = ?, 
+            RecurrenceID = ?,
+            CategoryID = ?
+        WHERE TransactionID = ?;
+        """
+        # uses global variable for transactionID
+        values = (date, amount, desc, ioe, rid, cid, transactionID)
+        cur.execute(query, values)
 
 class AnalyticsPage(tk.Frame):
     def __init__(self, parent, controller):
