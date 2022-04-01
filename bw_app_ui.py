@@ -96,12 +96,11 @@ class MainView(tk.Tk):
         (006, "2022-04-24", 3500.00, "Feds got me", 'E', NULL, 003),
         (007, "2022-04-25", 2000.00, "Child support", 'E', NULL, 003);
         """
-        try:
-            cur.execute(insert_cat)
-            cur.execute(insert_trans)
-        except:
-            pass
-        # cur.execute(insert_trans)
+        # try:
+        #     cur.execute(insert_cat)
+        #     cur.execute(insert_trans)
+        # except:
+        #     pass
 
         # This container is where we'll stack all the frames for different pages
         # on top of each other, and the one we want to be visible will be
@@ -207,7 +206,7 @@ class TransactionPage(tk.Frame):
         calculateNetWorth = tk.Button(
             self,
             text="Networth",
-            command=lambda: self
+            command=lambda: self.calculateNetWorth()
 
         )
         netWorth = tk.Label(
@@ -268,6 +267,8 @@ class TransactionPage(tk.Frame):
         addButton.grid(row=0, column=5)
         thisMonthButton.grid(row=1, column=5)
 
+        calculateNetWorth.grid(row=1, column=6) # <- This is temporary
+
         # Image Buttons
         leftArrowButton.grid(row=1, column=1)
         rightArrowButton.grid(row=1, column=3)
@@ -321,21 +322,56 @@ class TransactionPage(tk.Frame):
         transactionID = self.tvExpenses.selection()[0]
         return transactionID
 
-    def calculateNetWorth(self):
-        grab_income = """
-        select sum(amount)
-        from trans 
-        where IncomeOrExpense='I'
-        """
+    def calculateNetWorth(self, **kwargs):
+        global current_date # Establish that the current_data global var will be used here
+        option = ""
 
-        grab_expense = """
-        select sum(amount) 
-        from trans 
-        where IncomeOrExpense='E'
-        """
+        if option == 'month': # For by-month net worth
+            month = current_date.strftime('%m')
+            year = current_date.strftime('%Y')
 
-        total_income = cur.execute(grab_income).fetchall()
-        total_expense = cur.execute(grab_expense).fetchall()
+            grab_income = """
+            select sum(Amount)
+            from trans 
+            where IncomeOrExpense='I'
+            and month(InputDate)={m}
+            and year(InputDate)={y};
+            """.format(m = month, y = year)
+
+            grab_expense = """
+            select sum(Amount) 
+            from trans 
+            where IncomeOrExpense='E'            
+            and month(InputDate)={m}
+            and year(InputDate)={y};
+            """.format(m = month, y = year)
+        else: # For total net worth
+            grab_income = """
+            select sum(Amount)
+            from trans 
+            where IncomeOrExpense='I';
+            """
+
+            grab_expense = """
+            select sum(Amount) 
+            from trans 
+            where IncomeOrExpense='E';
+            """
+
+        total_income_list = cur.execute(grab_income).fetchall()
+        total_expense_list = cur.execute(grab_expense).fetchall()
+        
+        total_income = 0
+        total_expense = 0
+
+        for x in total_income_list:
+            total_income = x[0]
+
+        for x in total_expense_list:
+            total_expense = x[0]
+
+        net_worth = total_income - total_expense
+        print(net_worth)
     
     # When called, loads Income data from database into tvIncomes
     def LoadIncomes(self, month, year):
