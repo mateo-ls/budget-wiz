@@ -147,14 +147,16 @@ class EditTransactionPage(tk.Frame):
 
         query = """
         SELECT * from trans
-        WHERE TransactionID = ?;
-        """
-        x = config.cur.execute(query, [config.transactionID]).fetchall()[0]
+        WHERE TransactionID = {t};
+        """.format(t = config.transactionID)
+        x = config.cur.execute(query).fetchall()[0]
+        
+        # TODO set entry amounts
         print(x)
-        return x
+        
       
     def UpdateTrans(self, date, amount, desc, ioe, rid, cid):
-        print("TRANSAC: -----", config.transactionID)
+        #print("TRANSAC: -----", config.transactionID)
         query = """
         UPDATE trans
         SET 
@@ -176,4 +178,4 @@ class EditTransactionPage(tk.Frame):
         )
         print(query)
         config.cur.execute(query)
-        self.PullTrans()
+        config.conn.commit()

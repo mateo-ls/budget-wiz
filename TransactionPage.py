@@ -35,7 +35,7 @@ class TransactionPage(tk.Frame):
         editButton = tk.Button(
             self, 
             text="Edit",
-            command=lambda: controller.show_frame("EditTransactionPage")
+            command= self.PullAndEdit#, #controller.show_frame("EditTransactionPage")]
         )
         deleteButton = tk.Button(self, text="Delete")
         
@@ -192,9 +192,7 @@ class TransactionPage(tk.Frame):
     
     def selectRecordExpense(self, event):
         curItem = self.tvExpenses.identify('item', event.x, event.y)
-        print(curItem)
         config.transactionID = self.tvExpenses.item(curItem, "text")
-        print(config.transactionID)
         #print(config.transactionID)
 
     def calculateNetWorth(self, **kwargs):
@@ -302,3 +300,8 @@ class TransactionPage(tk.Frame):
             Amount = row[3]
             Category = row[4]
             self.tvExpenses.insert("", 'end', text=TransactionID, values=(Date, Description, Amount, Category))
+    
+    def PullAndEdit(self):
+        page = self.controller.get_page("EditTransactionPage")
+        page.PullTrans()
+        self.controller.show_frame("EditTransactionPage")
