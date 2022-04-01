@@ -120,6 +120,7 @@ class AddTransactionPage(tk.Frame):
         """
 
         values = (date, amount, desc, ioe, rid, cid)
+        print(values)
         config.cur.execute(transaction, values)
         config.conn.commit()
 

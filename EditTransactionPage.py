@@ -74,10 +74,10 @@ class EditTransactionPage(tk.Frame):
         categoryDropdown.grid(row=3, column=1)
 
         # Labels
-        label = tk.Label(self, text="This is Add Transaction Page")
+        label = tk.Label(self, text="This is Edit Transaction Page")
         label.grid(row=1, column=0)
 
-        x = self.PullTrans()
+        self.PullTrans()
     
     # Should run when addNewCategoryButton is pressed
     def addCategory(event = None):
@@ -134,7 +134,7 @@ class EditTransactionPage(tk.Frame):
             return False
 
     def submitButton(self, date, amount, comment, type, category, catSelect):
-        self.submitTransaction(date, amount, comment, type, 1, category.index(catSelect)+1)
+        self.UpdateTrans(date, amount, comment, type, 1, category.index(catSelect)+1)
         page = self.controller.get_page("TransactionPage")
         page.LoadIncomes(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
         page.LoadExpenses(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
@@ -143,30 +143,37 @@ class EditTransactionPage(tk.Frame):
     # function pulls and returns a tuple of all the values in the trans table
     # with global transactionID
     def PullTrans(self):
-        ## TEST CASE (Do not delete) ##
-        global transactionID
-        transactionID = 1
-        
+        #config.transactionID = 2
+
         query = """
         SELECT * from trans
         WHERE TransactionID = ?;
         """
-        x = config.cur.execute(query, [transactionID]).fetchall()[0]
+        x = config.cur.execute(query, [config.transactionID]).fetchall()[0]
         print(x)
         return x
       
     def UpdateTrans(self, date, amount, desc, ioe, rid, cid):
+        print("TRANSAC: -----", config.transactionID)
         query = """
         UPDATE trans
         SET 
-            InputDate = ?, 
-            Amount = ?, 
-            Description = ?, 
-            IncomeOrExpense = ?, 
-            RecurrenceID = ?,
-            CategoryID = ?
-        WHERE TransactionID = ?;
-        """
-        # uses global variable for transactionID
-        values = (date, amount, desc, ioe, rid, cid, transactionID)
-        config.cur.execute(query, values)
+            InputDate = "{i}", 
+            Amount = {a}, 
+            Description = "{d}", 
+            IncomeOrExpense = '{ioe}', 
+            RecurrenceID = {r},
+            CategoryID = {c}
+        WHERE TransactionID = {t};
+        """.format(
+            i = date,
+            a = amount,
+            d = desc,
+            ioe = ioe,
+            r = rid,
+            c = cid,
+            t = config.transactionID
+        )
+        print(query)
+        config.cur.execute(query)
+        self.PullTrans()
