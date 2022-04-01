@@ -187,7 +187,6 @@ class TransactionPage(tk.Frame):
         # ----- Other Labels -----
         incomeLabel = tk.Label(self, text="Incomes")
         expenseLabel = tk.Label(self, text="Expenses")
-        label = tk.Label(self, text="This is Transaction Page")
 
         # Incomes Treeview
         columns = ("#1", "#2", "#3", "#4")
@@ -247,7 +246,6 @@ class TransactionPage(tk.Frame):
         self.selectedMonthLabel.grid(row=1, column=2)
         incomeLabel.grid(row=2, column=2)
         expenseLabel.grid(row=2, column=5)
-        label.grid(row=5, column=5)
 
         # Treeviews
         self.tvIncomes.grid(row=3, column=1, columnspan=3)
@@ -399,6 +397,9 @@ class AddTransactionPage(tk.Frame):
         #
         # Labels
         # TODO add labels
+        amountLabel = Label(self, text="Amount: ")
+        descriptionLabel = Label(self, text="Description: ")
+        categoryLabel = Label(self, text="Category: ")
     
         ## Layout of above UI elements ##
 
@@ -417,8 +418,9 @@ class AddTransactionPage(tk.Frame):
         categoryDropdown.grid(row=3, column=1)
 
         # Labels
-        label = tk.Label(self, text="This is Add Transaction Page")
-        label.grid(row=1, column=0)
+        amountLabel.grid(row=5, column=0)
+        categoryLabel.grid(row=3, column=0)
+        descriptionLabel.grid(row=6, column=0)
 
     
     # Should run when addNewCategoryButton is pressed
@@ -683,7 +685,7 @@ class AnalyticsPage(tk.Frame):
         self.selectedMonthLabel.grid(row=1, column=2)
 
         # Treeviews
-        self.tvCategoryTotals.grid(row=3, column=1, columnspan=3)
+        self.tvCategoryTotals.grid(row=3, column=1, columnspan=3, rowspan=2)
         
 
 if __name__ == "__main__":
