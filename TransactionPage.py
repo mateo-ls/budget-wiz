@@ -10,6 +10,9 @@ import tkinter.simpledialog
 from datetime import datetime # For date object
 from dateutil.relativedelta import relativedelta # For date object arithmetic
 
+netWorthMonth = 0
+netWorthTotal = 0
+
 class TransactionPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
@@ -59,7 +62,10 @@ class TransactionPage(tk.Frame):
             self,
             image=arrowIcon,
             borderwidth=0,
-            command=lambda: self.changeMonth("left")
+            command=lambda:[ 
+                self.changeMonth("left"),
+                configMonthLabel("month")
+            ]
         )
         leftArrowButton.image = arrowIcon
 
@@ -67,25 +73,41 @@ class TransactionPage(tk.Frame):
             self, 
             image=arrowIconFlipped, 
             borderwidth=0,
-            command=lambda: self.changeMonth("right")
+            command=lambda:[
+                self.changeMonth("right"),
+                configMonthLabel("month")
+            ]
         )
         rightArrowButton.image = arrowIconFlipped
 
         thisMonthButton = tk.Button(
             self, 
             text="This Month",
-            command=lambda: self.changeMonth("current")
+            command=lambda:[
+                self.changeMonth("current"),
+                configMonthLabel("month")
+            ]
         )
 
-        # ----- Networth Button and Label -----
-        calculateNetWorth = tk.Button(
+        # ----- Networth Config Function, Button, and Label -----
+
+        def configMonthLabel(option):
+            if option == "month":
+                netWorthLabelMonth.config(text = self.calculateNetWorth("month"))
+            else:
+                netWorthLabelTotal.config(text = self.calculateNetWorth("total"))
+
+        netWorthMonth = self.calculateNetWorth("month")
+        netWorthTotal = self.calculateNetWorth("total")
+
+        netWorthLabelMonth = tk.Label(
             self,
-            text="Networth",
-            command=lambda: self.calculateNetWorth()
-
+            text=f"Net Worth (Month): {netWorthMonth}"
         )
-        netWorth = tk.Label(
-            self
+
+        netWorthLabelTotal = tk.Label(
+            self,
+            text=f"Net Worth (Total): {netWorthTotal}"
         )
 
         # ----- Other Labels -----
@@ -142,7 +164,7 @@ class TransactionPage(tk.Frame):
         addButton.grid(row=0, column=5)
         thisMonthButton.grid(row=1, column=5)
 
-        calculateNetWorth.grid(row=1, column=6) # <- This is temporary
+        #calculateNetWorth.grid(row=1, column=6) # <- This is temporary
 
         # Image Buttons
         leftArrowButton.grid(row=1, column=1)
@@ -152,6 +174,9 @@ class TransactionPage(tk.Frame):
         self.selectedMonthLabel.grid(row=1, column=2)
         incomeLabel.grid(row=2, column=2)
         expenseLabel.grid(row=2, column=5)
+
+        netWorthLabelMonth.grid(row=4, column=1)
+        netWorthLabelTotal.grid(row=4, column=3)
 
         # Treeviews
         self.tvIncomes.grid(row=3, column=1, columnspan=3)
@@ -171,12 +196,16 @@ class TransactionPage(tk.Frame):
         #    self.grid_rowconfigure(row, minsize=100)
     
     def changeMonth(self, direction):
+        global netWorthMonth
+
         if direction == "left":
             config.current_date = config.current_date - relativedelta(months=1)
         elif direction == "right":
             config.current_date = config.current_date + relativedelta(months=1)
         else: 
             config.current_date = datetime.now()
+
+        netWorthMonth = self.calculateNetWorth("month")
 
         # Update the selectedMonthLabel and Incomes & Expenses Table
         m_y = f"{config.current_date.strftime('%B')} {config.current_date.strftime('%Y')}"
@@ -195,9 +224,7 @@ class TransactionPage(tk.Frame):
         transactionID = self.tvExpenses.selection()[0]
         return transactionID
 
-    def calculateNetWorth(self, **kwargs):
-        option = ""
-
+    def calculateNetWorth(self, option):
         if option == 'month': # For by-month net worth
             month = config.current_date.strftime('%m')
             year = config.current_date.strftime('%Y')
@@ -205,29 +232,29 @@ class TransactionPage(tk.Frame):
             grab_income = """
             select sum(Amount)
             from trans 
-            where IncomeOrExpense='I'
-            and month(InputDate)={m}
-            and year(InputDate)={y};
+            where IncomeOrExpense='I' and
+            strftime('%m', trans.InputDate) = '{m}' and
+            strftime('%Y', trans.InputDate) = '{y}';
             """.format(m = month, y = year)
 
             grab_expense = """
             select sum(Amount) 
             from trans 
-            where IncomeOrExpense='E'            
-            and month(InputDate)={m}
-            and year(InputDate)={y};
+            where IncomeOrExpense = 'E' and   
+            strftime('%m', trans.InputDate) = '{m}' and
+            strftime('%Y', trans.InputDate) = '{y}';
             """.format(m = month, y = year)
         else: # For total net worth
             grab_income = """
             select sum(Amount)
             from trans 
-            where IncomeOrExpense='I';
+            where IncomeOrExpense = 'I';
             """
 
             grab_expense = """
             select sum(Amount) 
             from trans 
-            where IncomeOrExpense='E';
+            where IncomeOrExpense = 'E';
             """
 
         total_income_list = config.cur.execute(grab_income).fetchall()
@@ -243,7 +270,8 @@ class TransactionPage(tk.Frame):
             total_expense = x[0]
 
         net_worth = total_income - total_expense
-        print(net_worth)
+        return net_worth
+
     
     # When called, loads Income data from database into tvIncomes
     def LoadIncomes(self, month, year):

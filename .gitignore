@@ -1,0 +1,11 @@
+# pycache Directory #
+#####################
+node_modules/
+
+# .db Files #
+#############
+*.db
+
+# .vscode Directory #
+#####################
+.vscode/
