@@ -37,7 +37,11 @@ class TransactionPage(tk.Frame):
             text="Edit",
             command=lambda: controller.show_frame("EditTransactionPage")
         )
-        deleteButton = tk.Button(self, text="Delete")
+        deleteButton = tk.Button(
+            self, 
+            text="Delete",
+            command = lambda: self.deleteSelected
+        )
         
 
         # ----- Upload Images for Left and Right Arrows -----
@@ -300,3 +304,11 @@ class TransactionPage(tk.Frame):
             Amount = row[3]
             Category = row[4]
             self.tvExpenses.insert("", 'end', text=TransactionID, values=(Date, Description, Amount, Category))
+    
+    def deleteSelected(self):
+        query = """
+        delete from trans
+        where TransactionID = {t}
+        """.format(t=config.transactionID)
+        config.cur.execute(query)
+        config.conn.commit()
