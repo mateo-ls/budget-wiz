@@ -35,9 +35,13 @@ class TransactionPage(tk.Frame):
         editButton = tk.Button(
             self, 
             text="Edit",
-            command=lambda: controller.show_frame("EditTransactionPage")
+            command= self.PullAndEdit#, #controller.show_frame("EditTransactionPage")]
         )
-        deleteButton = tk.Button(self, text="Delete")
+        deleteButton = tk.Button(
+            self, 
+            text="Delete",
+            command = lambda: self.deleteSelected
+        )
         
 
         # ----- Upload Images for Left and Right Arrows -----
@@ -109,7 +113,7 @@ class TransactionPage(tk.Frame):
         # TODO Need to place vertical scroll bar using either grid or place
         # We'll figure that out later
         self.tvIncomes.configure(yscroll=vsb.set)
-        self.tvIncomes.bind("<<TreeviewSelect>>", self.selectRecordIncome)
+        self.tvIncomes.bind("<ButtonRelease-1>", self.selectRecordIncome)
 
         # Expenses Treeview
         columns = ("#1", "#2", "#3", "#4")
@@ -128,7 +132,7 @@ class TransactionPage(tk.Frame):
         # TODO Need to place vertical scroll bar using either grid or place
         # We'll figure that out later
         self.tvExpenses.configure(yscroll=vsb.set)
-        self.tvExpenses.bind("<<TreeviewSelect>>", self.selectRecordExpense)
+        self.tvExpenses.bind("<ButtonRelease-1>", self.selectRecordExpense)
 
 
         # ----- Establishes layout of above elements -----
@@ -186,14 +190,14 @@ class TransactionPage(tk.Frame):
 
 
     def selectRecordIncome(self, event):
-        global transactionID
-        transactionID = self.tvIncomes.selection()[0]
-        return transactionID
+        curItem = self.tvIncomes.identify('item', event.x, event.y)
+        config.transactionID = self.tvIncomes.item(curItem, "text")
+        #print(config.transactionID)
     
     def selectRecordExpense(self, event):
-        global transactionID
-        transactionID = self.tvExpenses.selection()[0]
-        return transactionID
+        curItem = self.tvExpenses.identify('item', event.x, event.y)
+        config.transactionID = self.tvExpenses.item(curItem, "text")
+        #print(config.transactionID)
 
     def calculateNetWorth(self, **kwargs):
         option = ""
@@ -300,3 +304,16 @@ class TransactionPage(tk.Frame):
             Amount = row[3]
             Category = row[4]
             self.tvExpenses.insert("", 'end', text=TransactionID, values=(Date, Description, Amount, Category))
+    
+    def deleteSelected(self):
+        query = """
+        delete from trans
+        where TransactionID = {t}
+        """.format(t=config.transactionID)
+        config.cur.execute(query)
+        config.conn.commit()
+
+    def PullAndEdit(self):
+        page = self.controller.get_page("EditTransactionPage")
+        page.PullTrans()
+        self.controller.show_frame("EditTransactionPage")

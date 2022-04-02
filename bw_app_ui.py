@@ -84,7 +84,8 @@ class MainView(tk.Tk):
         insert into category (CategoryName, Description, IncomeOrExpense) values
         ("General", NULL, 'I'),
         ("Groceries", "For grocery expenses", 'E'),
-        ("Bills", "For bill expenses", 'E');
+        ("Bills", "For bill expenses", 'E'),
+        ("Bills2", "For bill expenses", 'E');
         """
         
         insert_trans = """
