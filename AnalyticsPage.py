@@ -73,21 +73,21 @@ class AnalyticsPage(tk.Frame):
         # self.tvCategoryTotals.bind("<<TreeviewSelect>>", s)
 
         # Charts
-        figure1 = plt.Figure(figsize=(4,3), dpi=100)
-        ax1 = figure1.add_subplot(111)
-        chart_type1 = FigureCanvasTkAgg(figure1, self)
-        chart_type1.get_tk_widget().grid(row=3, column=6)
-        df1 = df1[['First Column','Second Column']].groupby('First Column').sum()
-        df1.plot(kind='CHART TYPE', legend=True, ax=ax1)
-        ax1.set_title('CHART TITLE')
+        # figure1 = plt.Figure(figsize=(4,3), dpi=100)
+        # ax1 = figure1.add_subplot(111)
+        # chart_type1 = FigureCanvasTkAgg(figure1, self)
+        # chart_type1.get_tk_widget().grid(row=3, column=6)
+        # df1 = df1[['First Column','Second Column']].groupby('First Column').sum()
+        # df1.plot(kind='CHART TYPE', legend=True, ax=ax1)
+        # ax1.set_title('CHART TITLE')
 
-        figure2 = plt.Figure(figsize=(4,3), dpi=100)
-        ax2 = figure2.add_subplot(111)
-        chart_type2 = FigureCanvasTkAgg(figure2, self)
-        chart_type2.get_tk_widget().grid(row=4, column=6)
-        df2 = df2[['First Column','Second Column']].groupby('First Column').sum()
-        df2.plot(kind='CHART TYPE', legend=True, ax=ax2)
-        ax2.set_title('CHART TITLE')
+        # figure2 = plt.Figure(figsize=(4,3), dpi=100)
+        # ax2 = figure2.add_subplot(111)
+        # chart_type2 = FigureCanvasTkAgg(figure2, self)
+        # chart_type2.get_tk_widget().grid(row=4, column=6)
+        # df2 = df2[['First Column','Second Column']].groupby('First Column').sum()
+        # df2.plot(kind='CHART TYPE', legend=True, ax=ax2)
+        # ax2.set_title('CHART TITLE')
 
 
         ## Layout
