@@ -19,7 +19,7 @@ class TransactionPage(tk.Frame):
         self.controller = controller
         
 
-        # Establishes this pages UI elements/
+        # Establishes this pages UI elements
         # Date, description, amount, category
 
 
@@ -64,7 +64,8 @@ class TransactionPage(tk.Frame):
             borderwidth=0,
             command=lambda:[ 
                 self.changeMonth("left"),
-                configMonthLabel("month")
+                self.calculateNetWorth("month"),
+                self.calculateNetWorth("total")
             ]
         )
         leftArrowButton.image = arrowIcon
@@ -75,7 +76,8 @@ class TransactionPage(tk.Frame):
             borderwidth=0,
             command=lambda:[
                 self.changeMonth("right"),
-                configMonthLabel("month")
+                self.calculateNetWorth("month"),
+                self.calculateNetWorth("total")
             ]
         )
         rightArrowButton.image = arrowIconFlipped
@@ -85,30 +87,25 @@ class TransactionPage(tk.Frame):
             text="This Month",
             command=lambda:[
                 self.changeMonth("current"),
-                configMonthLabel("month")
+                self.calculateNetWorth("month"),
+                self.calculateNetWorth("total")
             ]
         )
 
-        # ----- Networth Config Function, Button, and Label -----
+        # ----- Networth, Button, and Label -----
 
-        def configMonthLabel(option):
-            if option == "month":
-                netWorthLabelMonth.config(text = self.calculateNetWorth("month"))
-            else:
-                netWorthLabelTotal.config(text = self.calculateNetWorth("total"))
 
-        netWorthMonth = self.calculateNetWorth("month")
-        netWorthTotal = self.calculateNetWorth("total")
-
-        netWorthLabelMonth = tk.Label(
+        self.netWorthLabelMonth = tk.Label(
             self,
-            text=f"Net Worth (Month): {netWorthMonth}"
+            text=""
+        )
+        self.netWorthLabelTotal = tk.Label(
+            self,
+            text=""
         )
 
-        netWorthLabelTotal = tk.Label(
-            self,
-            text=f"Net Worth (Total): {netWorthTotal}"
-        )
+        self.calculateNetWorth("month")
+        self.calculateNetWorth("total")
 
         # ----- Other Labels -----
         incomeLabel = tk.Label(self, text="Incomes")
@@ -175,8 +172,8 @@ class TransactionPage(tk.Frame):
         incomeLabel.grid(row=2, column=2)
         expenseLabel.grid(row=2, column=5)
 
-        netWorthLabelMonth.grid(row=4, column=1)
-        netWorthLabelTotal.grid(row=4, column=3)
+        self.netWorthLabelMonth.grid(row=4, column=1)
+        self.netWorthLabelTotal.grid(row=4, column=3)
 
         # Treeviews
         self.tvIncomes.grid(row=3, column=1, columnspan=3)
@@ -205,8 +202,6 @@ class TransactionPage(tk.Frame):
         else: 
             config.current_date = datetime.now()
 
-        netWorthMonth = self.calculateNetWorth("month")
-
         # Update the selectedMonthLabel and Incomes & Expenses Table
         m_y = f"{config.current_date.strftime('%B')} {config.current_date.strftime('%Y')}"
         self.selectedMonthLabel["text"] = m_y
@@ -225,7 +220,7 @@ class TransactionPage(tk.Frame):
         return transactionID
 
     def calculateNetWorth(self, option):
-        if option == 'month': # For by-month net worth
+        if option == "month": # For by-month net worth
             month = config.current_date.strftime('%m')
             year = config.current_date.strftime('%Y')
 
@@ -247,7 +242,7 @@ class TransactionPage(tk.Frame):
         else: # For total net worth
             grab_income = """
             select sum(Amount)
-            from trans 
+            from trans
             where IncomeOrExpense = 'I';
             """
 
@@ -257,21 +252,30 @@ class TransactionPage(tk.Frame):
             where IncomeOrExpense = 'E';
             """
 
-        total_income_list = config.cur.execute(grab_income).fetchall()
-        total_expense_list = config.cur.execute(grab_expense).fetchall()
-        
         total_income = 0
         total_expense = 0
 
-        for x in total_income_list:
-            total_income = x[0]
-
-        for x in total_expense_list:
-            total_expense = x[0]
+ 
+        total_income_list = config.cur.execute(grab_income).fetchall()
+        if total_income_list[0][0] != None:
+            for x in total_income_list:
+                total_income = x[0]
+        else:
+            total_income = 0
+            
+        total_expense_list = config.cur.execute(grab_expense).fetchall()
+        if total_expense_list[0][0] != None:
+            for x in total_expense_list:
+                total_expense = x[0]
+        else:
+            total_expense = 0
 
         net_worth = total_income - total_expense
-        return net_worth
 
+        if option == "month":
+            self.netWorthLabelMonth.config(text = f"Net Worth (Month): {net_worth}")
+        else:
+            self.netWorthLabelTotal.config(text = f"Net Worth (Total): {net_worth}")
     
     # When called, loads Income data from database into tvIncomes
     def LoadIncomes(self, month, year):

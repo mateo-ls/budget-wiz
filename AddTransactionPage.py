@@ -143,3 +143,4 @@ class AddTransactionPage(tk.Frame):
         page.LoadIncomes(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
         page.LoadExpenses(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
         self.controller.show_frame("TransactionPage")
+        #page.calculateNetWorth
