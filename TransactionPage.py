@@ -35,12 +35,12 @@ class TransactionPage(tk.Frame):
         editButton = tk.Button(
             self, 
             text="Edit",
-            command= self.PullAndEdit#, #controller.show_frame("EditTransactionPage")]
+            command= self.PullAndEdit #, #controller.show_frame("EditTransactionPage")]
         )
         deleteButton = tk.Button(
             self, 
             text="Delete",
-            command = lambda: self.deleteSelected
+            command = self.deleteSelected
         )
         
 
@@ -312,6 +312,8 @@ class TransactionPage(tk.Frame):
         """.format(t=config.transactionID)
         config.cur.execute(query)
         config.conn.commit()
+        self.LoadIncomes(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
+        self.LoadExpenses(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
 
     def PullAndEdit(self):
         page = self.controller.get_page("EditTransactionPage")

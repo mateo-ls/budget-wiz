@@ -168,7 +168,13 @@ class EditTransactionPage(tk.Frame):
             self.incomeRadioButton.invoke()
 
         # set category
-        # self.categorySelected.config()
+        query3 = """
+        select CategoryName from category
+        where CategoryID = "{cat}"
+        """.format(cat = x[6])
+
+        cname = config.cur.execute(query3).fetchall()[0][0]
+        self.categorySelected.set(cname)
 
         # set recurring checkbox
         # TODO when we set up recurrence
@@ -188,10 +194,14 @@ class EditTransactionPage(tk.Frame):
         #print("TRANSAC: -----", config.transactionID)
         print(self.categorySelected.get())
 
-        cid = self.categoryOptions.index(self.categorySelected.get())
-        print(cid)
-
         query = """
+        select CategoryID from category
+        where CategoryName = "{cat}"
+        """.format(cat = self.categorySelected.get())
+
+        cid = config.cur.execute(query).fetchall()[0][0]
+
+        query2 = """
         UPDATE trans
         SET 
             InputDate = "{i}", 
@@ -210,6 +220,6 @@ class EditTransactionPage(tk.Frame):
             c = cid,
             t = config.transactionID
         )
-        print(query)
-        config.cur.execute(query)
+        print(query2)
+        config.cur.execute(query2)
         config.conn.commit()
