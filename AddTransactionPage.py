@@ -17,7 +17,7 @@ class AddTransactionPage(tk.Frame):
         self.controller = controller
         
 
-        ## UI elements ##
+        ###### UI elements ######
 
         # Buttons
         transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
@@ -42,7 +42,10 @@ class AddTransactionPage(tk.Frame):
         amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
         commentEntry = Entry(self, text="Comment")
         
-        categoryOptions = [row[0] for row in config.cur.execute("select CategoryName from category;").fetchall()]
+
+        # ----- Category Options Dropdown -----
+        categoryOptions = [
+            row[0] for row in config.cur.execute("select CategoryName from category;").fetchall()]
         print(categoryOptions)
         categorySelected = StringVar()
         categoryDropdown = OptionMenu(self, categorySelected, *categoryOptions)
@@ -143,4 +146,6 @@ class AddTransactionPage(tk.Frame):
         page.LoadIncomes(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
         page.LoadExpenses(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
         self.controller.show_frame("TransactionPage")
-        #page.calculateNetWorth
+        # Calculate new net worth based off added transaction
+        page.calculateNetWorth("month")
+        page.calculateNetWorth("total")

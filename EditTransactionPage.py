@@ -119,6 +119,11 @@ class EditTransactionPage(tk.Frame):
         values = (date, amount, desc, ioe, rid, cid)
         config.cur.execute(transaction, values)
         config.conn.commit()
+        # Calculate new net worth based off edited transaction
+        page = self.controller.get_page("TransactionPage")
+        page.calculateNetWorth("month")
+        page.calculateNetWorth("total")
+
 
     def submitCategory(transactionType, Name, Description):
         # TODO insert
