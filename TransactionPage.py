@@ -32,14 +32,15 @@ class TransactionPage(tk.Frame):
         editButton = tk.Button(
             self, 
             text="Edit",
-            command=lambda: controller.show_frame("EditTransactionPage")
+            command= self.PullAndEdit #, #controller.show_frame("EditTransactionPage")]
         )
         deleteButton = tk.Button(
             self, 
             text="Delete",
             command=lambda:[ # We will need to add the delete function to the delete button
                 self.calculateNetWorth("month"),
-                self.calculateNetWorth("total")
+                self.calculateNetWorth("total"),
+                self.deleteSelected
             ]
         )
         
@@ -126,7 +127,7 @@ class TransactionPage(tk.Frame):
         # TODO Need to place vertical scroll bar using either grid or place
         # We'll figure that out later
         self.tvIncomes.configure(yscroll=vsb.set)
-        self.tvIncomes.bind("<<TreeviewSelect>>", self.selectRecordIncome)
+        self.tvIncomes.bind("<ButtonRelease-1>", self.selectRecordIncome)
 
         # ----- Expenses Treeview ------
         columns = ("#1", "#2", "#3", "#4")
@@ -145,7 +146,7 @@ class TransactionPage(tk.Frame):
         # TODO Need to place vertical scroll bar using either grid or place
         # We'll figure that out later
         self.tvExpenses.configure(yscroll=vsb.set)
-        self.tvExpenses.bind("<<TreeviewSelect>>", self.selectRecordExpense)
+        self.tvExpenses.bind("<ButtonRelease-1>", self.selectRecordExpense)
 
 
         # ----- Establishes Layout of Above Elements -----
@@ -204,6 +205,15 @@ class TransactionPage(tk.Frame):
         self.LoadIncomes(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
         self.LoadExpenses(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
 
+    def selectRecordIncome(self, event):
+        curItem = self.tvIncomes.identify('item', event.x, event.y)
+        config.transactionID = self.tvIncomes.item(curItem, "text")
+        #print(config.transactionID)
+    
+    def selectRecordExpense(self, event):
+        curItem = self.tvExpenses.identify('item', event.x, event.y)
+        config.transactionID = self.tvExpenses.item(curItem, "text")
+        #print(config.transactionID)
     def calculateNetWorth(self, option):
         if option == "month": # For by-month net worth
             month = config.current_date.strftime('%m')
@@ -260,16 +270,6 @@ class TransactionPage(tk.Frame):
             self.netWorthLabelMonth.config(text = f"Net Worth (Month): {net_worth}")
         else:
             self.netWorthLabelTotal.config(text = f"Net Worth (Total): {net_worth}")
-
-    def selectRecordIncome(self, event):
-        global transactionID
-        transactionID = self.tvIncomes.selection()[0]
-        return transactionID
-    
-    def selectRecordExpense(self, event):
-        global transactionID
-        transactionID = self.tvExpenses.selection()[0]
-        return transactionID
     
     # When called, loads Income data from database into tvIncomes
     def LoadIncomes(self, month, year):
@@ -326,3 +326,18 @@ class TransactionPage(tk.Frame):
             Amount = row[3]
             Category = row[4]
             self.tvExpenses.insert("", 'end', text=TransactionID, values=(Date, Description, Amount, Category))
+    
+    def deleteSelected(self):
+        query = """
+        delete from trans
+        where TransactionID = {t}
+        """.format(t=config.transactionID)
+        config.cur.execute(query)
+        config.conn.commit()
+        self.LoadIncomes(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
+        self.LoadExpenses(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
+
+    def PullAndEdit(self):
+        page = self.controller.get_page("EditTransactionPage")
+        page.PullTrans()
+        self.controller.show_frame("EditTransactionPage")

@@ -9,3 +9,6 @@ __pycache__/
 # .vscode Directory #
 #####################
 .vscode/
+
+*.pyc
+*.db
