@@ -187,7 +187,14 @@ class AddTransactionPage(tk.Frame):
             return False
 
     def submitButton(self, date, amount, comment, type, category, catSelect):
-        self.submitTransaction(date, amount, comment, type, 1, category.index(catSelect)+1)
+        query = """
+        select CategoryID from category
+        where CategoryName = "{cat}"
+        """.format(cat = catSelect)
+
+        cid = config.cur.execute(query).fetchall()[0][0]
+
+        self.submitTransaction(date, amount, comment, type, 1, cid)
         page = self.controller.get_page("TransactionPage")
         page.LoadIncomes(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
         page.LoadExpenses(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))

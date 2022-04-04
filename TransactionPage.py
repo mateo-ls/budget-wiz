@@ -34,6 +34,7 @@ class TransactionPage(tk.Frame):
             text="Edit",
             command= self.PullAndEdit #, #controller.show_frame("EditTransactionPage")]
         )
+
         deleteButton = tk.Button(
             self, 
             text="Delete",
@@ -231,6 +232,7 @@ class TransactionPage(tk.Frame):
             strftime('%m', trans.InputDate) = '{m}' and
             strftime('%Y', trans.InputDate) = '{y}';
             """.format(m = month, y = year)
+            
         else: # For total net worth
             grab_income = """
             select sum(Amount)

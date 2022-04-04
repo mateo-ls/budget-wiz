@@ -19,7 +19,7 @@ class EditTransactionPage(tk.Frame):
         self.controller = controller
         
 
-        ## UI elements ##
+        ###### UI elements ######
 
         # Buttons
         transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
@@ -33,20 +33,47 @@ class EditTransactionPage(tk.Frame):
         reoccurringFlag = BooleanVar()
         reoccuringCheckbutton = tk.Checkbutton(self, text="Reoccurring Monthly?", variable=reoccurringFlag, onvalue=1, offvalue=0)
 
-        # Stores radiobutton selection value (I or E) into transactionType string variable
-        self.transactionType = StringVar()
-        self.incomeRadioButton = tk.Radiobutton(self, text="Income", variable=self.transactionType, value="I")
-        self.expenseRadioButton = tk.Radiobutton(self, text="Expense", variable=self.transactionType, value="E")
+
+        # ----- Category Options Dropdown -----
+        self.categoryOptions = [row[0] for row in config.cur.execute(
+            "select CategoryName from category where IncomeOrExpense = 'I';").fetchall()]
+            # This sets the default categories to Income (check Radiobutton section below)
+        print(self.categoryOptions)
+        self.categorySelected = StringVar()
+        self.categoryDropdown = tk.OptionMenu(
+            self, 
+            self.categorySelected, 
+            *self.categoryOptions
+        )
+
+
+        # ----- Radiobutton Selection (I or E) -----
+        # Default radiobutton selected will be 'I'. Therefore, changeCategoryOption will run as 'I' First
+        self.transactionType = StringVar(None, 'I') # Sets default of string var transactionType = 'I'
+        self.incomeRadioButton = tk.Radiobutton(
+            self, 
+            text="Income", 
+            variable=self.transactionType, 
+            value='I',
+            command=lambda:[
+                self.setCategoryOption('I')
+            ]
+        )
+        self.expenseRadioButton = tk.Radiobutton(
+            self, 
+            text="Expense", 
+            variable=self.transactionType, 
+            value='E',
+            command=lambda:[
+                self.setCategoryOption('E')
+            ]
+        )
 
         # Entry fields
         self.dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
         vcmd = (self.register(self.validateNumber))
         self.amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
         self.commentEntry = Entry(self, text="Comment")
-        
-        self.categoryOptions = [row[0] for row in config.cur.execute("select CategoryName from category;").fetchall()]
-        self.categorySelected = StringVar()
-        self.categoryDropdown = OptionMenu(self, self.categorySelected,*self.categoryOptions)
 
         # search caetgoryOptions for categorySelected
         # get index number
@@ -57,6 +84,9 @@ class EditTransactionPage(tk.Frame):
         #
         # Labels
         # TODO add labels
+        amountLabel = Label(self, text="Amount: ")
+        descriptionLabel = Label(self, text="Description: ")
+        categoryLabel = Label(self, text="Category: ")
     
         ## Layout of above UI elements ##
 
@@ -73,6 +103,11 @@ class EditTransactionPage(tk.Frame):
         self.amountEntry.grid(row=5, column=1)   
         self.commentEntry.grid(row=6, column=1, columnspan=2)
         self.categoryDropdown.grid(row=3, column=1)
+
+        # Labels
+        amountLabel.grid(row=5, column=0)
+        categoryLabel.grid(row=3, column=0)
+        descriptionLabel.grid(row=6, column=0)
 
         # Labels
         label = tk.Label(self, text="This is Edit Transaction Page")
@@ -130,6 +165,29 @@ class EditTransactionPage(tk.Frame):
         print(Name)
         print(Description)
         return
+
+    def resetCategoryOption(self, options, index=None):
+        # Reset the dropdown menu
+        menu = self.categoryDropdown["menu"]
+        menu.delete(0, "end")
+
+        for string in options:
+            menu.add_command(
+                label=string,
+                command=lambda value=string:
+                    self.categorySelected.set(value)
+        )
+        
+        if index is not None:
+            self.categorySelected.set(options[index])
+
+    def setCategoryOption(self, option):
+        # option will be either 'I' or 'E'
+        grab_categories = """
+        select CategoryName from category where IncomeOrExpense = '{x}';
+        """.format(x = option)
+        categoryOptions = [row[0] for row in config.cur.execute(grab_categories).fetchall()]
+        self.resetCategoryOption(categoryOptions, 0)
     
     def validateNumber(self, P):
         if str.isdigit(P) or str(P) == "":
@@ -138,10 +196,19 @@ class EditTransactionPage(tk.Frame):
             return False
 
     def submitButton(self, date, amount, comment, type, category, catSelect):
-        self.UpdateTrans(date, amount, comment, type, 1, category.index(catSelect)+1)
+        query = """
+        select CategoryID from category
+        where CategoryName = "{cat}"
+        """.format(cat = catSelect)
+
+        cid = config.cur.execute(query).fetchall()[0][0]
+
+        self.UpdateTrans(date, amount, comment, type, 1, cid)
         page = self.controller.get_page("TransactionPage")
         page.LoadIncomes(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
         page.LoadExpenses(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
+        page.calculateNetWorth("month")
+        page.calculateNetWorth("total")
         self.controller.show_frame("TransactionPage")
 
     # function pulls and returns a tuple of all the values in the trans table
