@@ -31,31 +31,54 @@ class AddTransactionPage(tk.Frame):
         reoccurringFlag = BooleanVar()
         reoccuringCheckbutton = tk.Checkbutton(self, text="Reoccurring Monthly?", variable=reoccurringFlag, onvalue=1, offvalue=0)
 
-        # Stores radiobutton selection value (I or E) into transactionType string variable
-        transactionType = StringVar()
-        incomeRadioButton = tk.Radiobutton(self, text="Income", variable=transactionType, value="I")
-        expenseRadioButton = tk.Radiobutton(self, text="Expense", variable=transactionType, value="E")
+
+        # ----- Category Options Dropdown -----
+        categoryOptions = [row[0] for row in config.cur.execute(
+            "select CategoryName from category where IncomeOrExpense = 'I';").fetchall()]
+            # This sets the default categories to Income (check Radiobutton section below)
+        print(categoryOptions)
+        self.categorySelected = StringVar()
+        self.categoryDropdown = tk.OptionMenu(
+            self, 
+            self.categorySelected, 
+            *categoryOptions
+        )
+
+
+        # ----- Radiobutton Selection (I or E) -----
+        # Default radiobutton selected will be 'I'. Therefore, changeCategoryOption will run as 'I' First
+        transactionType = StringVar(None, 'I') # Sets default of string var transactionType = 'I'
+        incomeRadioButton = tk.Radiobutton(
+            self, 
+            text="Income", 
+            variable=transactionType, 
+            value='I',
+            command=lambda:[
+                self.setCategoryOption('I')
+            ]
+        )
+        expenseRadioButton = tk.Radiobutton(
+            self, 
+            text="Expense", 
+            variable=transactionType, 
+            value='E',
+            command=lambda:[
+                self.setCategoryOption('E')
+            ]
+        )
 
         # Entry fields
         dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
         vcmd = (self.register(self.validateNumber))
         amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
         commentEntry = Entry(self, text="Comment")
-        
-
-        # ----- Category Options Dropdown -----
-        categoryOptions = [
-            row[0] for row in config.cur.execute("select CategoryName from category;").fetchall()]
-        print(categoryOptions)
-        categorySelected = StringVar()
-        categoryDropdown = OptionMenu(self, categorySelected, *categoryOptions)
 
         # search caetgoryOptions for categorySelected
         # get index number
         # add 1 add to query
 
         # Submit
-        submitB = tk.Button(self, text="Submit", command=lambda: self.submitButton(dateCalendarEntry.get_date(), amountEntry.get(), commentEntry.get(), transactionType.get(), categoryOptions, categorySelected.get()))
+        submitB = tk.Button(self, text="Submit", command=lambda: self.submitButton(dateCalendarEntry.get_date(), amountEntry.get(), commentEntry.get(), transactionType.get(), categoryOptions, self.categorySelected.get()))
         #
         # Labels
         # TODO add labels
@@ -77,7 +100,7 @@ class AddTransactionPage(tk.Frame):
         dateCalendarEntry.grid(row=4, column=1)
         amountEntry.grid(row=5, column=1)   
         commentEntry.grid(row=6, column=1, columnspan=2)
-        categoryDropdown.grid(row=3, column=1)
+        self.categoryDropdown.grid(row=3, column=1)
 
         # Labels
         amountLabel.grid(row=5, column=0)
@@ -126,13 +149,35 @@ class AddTransactionPage(tk.Frame):
         config.cur.execute(transaction, values)
         config.conn.commit()
 
-
     def submitCategory(transactionType, Name, Description):
         # TODO insert
         print(transactionType)
         print(Name)
         print(Description)
         return
+
+    def resetCategoryOption(self, options, index=None):
+        # Reset the dropdown menu
+        menu = self.categoryDropdown["menu"]
+        menu.delete(0, "end")
+
+        for string in options:
+            menu.add_command(
+                label=string,
+                command=lambda value=string:
+                    self.categorySelected.set(value)
+        )
+        
+        if index is not None:
+            self.categorySelected.set(options[index])
+
+    def setCategoryOption(self, option):
+        # option will be either 'I' or 'E'
+        grab_categories = """
+        select CategoryName from category where IncomeOrExpense = '{x}';
+        """.format(x = option)
+        categoryOptions = [row[0] for row in config.cur.execute(grab_categories).fetchall()]
+        self.resetCategoryOption(categoryOptions, 0)
     
     def validateNumber(self, P):
         if str.isdigit(P) or str(P) == "":

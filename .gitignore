@@ -1,6 +1,6 @@
 # pycache Directory #
 #####################
-node_modules/
+__pycache__/
 
 # .db Files #
 #############
