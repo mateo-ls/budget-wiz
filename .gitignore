@@ -1,3 +1,14 @@
+# pycache Directory #
+#####################
+__pycache__/
+
+# .db Files #
+#############
+*.db
+
+# .vscode Directory #
+#####################
+.vscode/
 
 *.pyc
-dw_data.db
+*.db
