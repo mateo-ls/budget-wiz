@@ -11,7 +11,9 @@ import tkinter.simpledialog
 from datetime import datetime # For date object
 from dateutil.relativedelta import relativedelta # For date object arithmetic
 
-import matplotlib
+from pandas import DataFrame
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class AnalyticsPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -61,14 +63,32 @@ class AnalyticsPage(tk.Frame):
         columns = ("#1", "#2")
         self.tvCategoryTotals = ttk.Treeview(self, show="headings", height="5", columns=columns)
         self.tvCategoryTotals.heading("#1", text="Category", anchor="center")
-        self.tvCategoryTotals.column("#1", width=80, anchor="center", stretch=True)
+        self.tvCategoryTotals.column("#1", width=120, anchor="center", stretch=True)
         self.tvCategoryTotals.heading("#2", text="Amount", anchor="center")
-        self.tvCategoryTotals.column("#2", width=80, anchor="center", stretch=True)
+        self.tvCategoryTotals.column("#2", width=120, anchor="center", stretch=True)
         
         vsb = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tvCategoryTotals.yview)
         self.tvCategoryTotals.configure(yscroll=vsb.set)
         # Don't know if we need to select anything for this treeview
         # self.tvCategoryTotals.bind("<<TreeviewSelect>>", s)
+
+        # Charts
+        # figure1 = plt.Figure(figsize=(4,3), dpi=100)
+        # ax1 = figure1.add_subplot(111)
+        # chart_type1 = FigureCanvasTkAgg(figure1, self)
+        # chart_type1.get_tk_widget().grid(row=3, column=6)
+        # df1 = df1[['First Column','Second Column']].groupby('First Column').sum()
+        # df1.plot(kind='CHART TYPE', legend=True, ax=ax1)
+        # ax1.set_title('CHART TITLE')
+
+        # figure2 = plt.Figure(figsize=(4,3), dpi=100)
+        # ax2 = figure2.add_subplot(111)
+        # chart_type2 = FigureCanvasTkAgg(figure2, self)
+        # chart_type2.get_tk_widget().grid(row=4, column=6)
+        # df2 = df2[['First Column','Second Column']].groupby('First Column').sum()
+        # df2.plot(kind='CHART TYPE', legend=True, ax=ax2)
+        # ax2.set_title('CHART TITLE')
+
 
         ## Layout
 
