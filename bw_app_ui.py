@@ -1,27 +1,152 @@
+from os import popen
+from dataclasses import dataclass
+from time import strftime
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font as tkfont
 from tkinter import *
+#from warnings import _catch_warnings_without_records
+from matplotlib import offsetbox
+from numpy import gradient
 from tkcalendar import Calendar, DateEntry
 from PIL import Image, ImageTk
-import mysql.connector
-import bw_interface as bwSQL
+import tkinter.simpledialog
+from datetime import datetime # For date object
+from dateutil.relativedelta import relativedelta # For date object arithmetic
+
+# import other tkinter files
+import config
+import TransactionPage
+import AddTransactionPage
+import EditTransactionPage
+import AnalyticsPage
 
 
-class MainView(tk.Tk):
+# Sprint 3
+# TODO add labels to the add transaction page
+# TODO edit transaction
+# TODO add transaction
+# TODO refresh category dropdown as income/expense
+# TODO finish analytics UI
+# TODO add custom category functionality
+# TODO (low priority) delete custom category
+# TODO net worth
+# TODO recurring transaction
+# TODO add category functionality
+
+class MainView(tk.Tk): 
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
+
+        # SQLite Database Setup
+        category_table = """
+        create table if not exists category(
+            CategoryID INTEGER PRIMARY KEY AUTOINCREMENT,
+            CategoryName VARCHAR(255) NOT NULL,
+            Description VARCHAR(255),
+            IncomeOrExpense CHAR NOT NULL,
+            UNIQUE(CategoryName, IncomeOrExpense)
+        );
+        """
+        config.cur.execute(category_table)
+
+        recurring_table = """
+        create table if not exists recurring(
+            RecurrenceID INTEGER PRIMARY KEY AUTOINCREMENT,
+            StartDate DATE NOT NULL,
+            EndDate DATE,
+            Amount DECIMAL(38,2) NOT NULL,
+            Description VARCHAR(45),
+            IncomeOrExpense CHAR NOT NULL, /* 'I' = Income, 'E' = Expense */
+            CategoryID INT NOT NULL,
+            CONSTRAINT catFK2 FOREIGN KEY (CategoryID) REFERENCES category(CategoryID)
+        );
+        """
+        config.cur.execute(recurring_table)
+
+        trans_table = """
+        create table if not exists trans(
+            TransactionID INTEGER PRIMARY KEY AUTOINCREMENT,
+            InputDate DATE NOT NULL,
+            Amount DECIMAL(38,2) NOT NULL,
+            Description VARCHAR(45),
+            IncomeOrExpense CHAR, /* 'I' = Income, 'E' = Expense */
+            RecurrenceID INT,
+            CategoryID INT NOT NULL,
+            CONSTRAINT recFK FOREIGN KEY (CategoryID) REFERENCES category(CategoryID),
+            CONSTRAINT catFK1 FOREIGN KEY (RecurrenceID) REFERENCES recurring(RecurrenceID)
+        );
+        """
+        config.cur.execute(trans_table)
+
+        # DEFAULT CATEGORIES
+        insert_cat = """
+        insert into category (CategoryName, Description, IncomeOrExpense) values
+        ("General Income", NULL, 'I'),
+        ("General Expenses", NULL, 'E'),
+        ("Groceries", "Grocery expenses", 'E'),
+        ("Outside Dining", "Expenses from outside dining", 'E'),
+        ("Bills", "Bill expenses", 'E'),
+        ("Gaming", "Expenses related to gaming", 'E'),
+        ("School", "School expenses", 'E'),
+        ("Work", "Work income", 'I'),
+        ("Stocks", "Income from stocks", 'I'),
+        ("Winnings", "Income from tournament winnings", 'I');
+        """
         
+        insert_trans = """
+        insert into trans values
+        (001, "2022-02-01", 2400.00, "Child support", 'E', NULL, 002),
+        (002, "2022-02-04", 256.99, "Groceries", 'E', NULL, 003),
+        (003, "2022-02-10", 30.00, "Joe paid me back", 'I', NULL, 001),
+        (004, "2022-02-11", 900.00, "Monthly rent paid", 'E', NULL, 005),
+        (005, "2022-02-12", 3000.00, "Allowance", 'I', NULL, 001),
+        (006, "2022-02-16", 3500.00, "Found the imposter", 'I', NULL, 008),
+        (008, "2022-02-20", 5445.45, "College Tuition Payment 1/3", 'E', NULL, 007),
+        (009, "2022-02-25", 94.00, "Groceries", 'E', NULL, 003),
+        (010, "2022-02-28", 240.00, "Dogecoin earnings", 'I', NULL, 009),
+        (011, "2022-03-01", 2400.00, "Child support", 'E', NULL, 002),
+        (012, "2022-03-02", 540.99, "New gaming PC", 'E', NULL, 006),
+        (013, "2022-03-05", 1500.00, "Fixed wires in electrical", 'I', NULL, 008),
+        (014, "2022-03-10", 900.00, "Monthly rent paid", 'E', NULL, 005),
+        (015, "2022-03-13", 1500.00, "Won local hotdog-eating tournament", 'I', NULL, 010),
+        (016, "2022-03-13", 140.00, "Dogecoin earnings", 'I', NULL, 009),
+        (017, "2022-03-14", 3483.80, "College Tuition Payment 2/3", 'E', NULL, 007),
+        (018, "2022-03-16", 235.89, "Groceries", 'E', NULL, 003),
+        (019, "2022-03-19", 456.70, "Groceries", 'E', NULL, 003),
+        (020, "2022-03-25", 45.90, "Paid my homie back for venting", 'E', NULL, 002),
+        (021, "2022-03-25", 3000.00, "AMONGUS", 'I', NULL, 001),
+        (022, "2022-03-30", 15.00, "McDonalds", 'E', NULL, 004),
+        (023, "2022-03-31", 4750.00, "Found the imposrter", 'I', NULL, 008),
+        (024, "2022-04-01", 2400.00, "Child support", 'E', NULL, 002),
+        (025, "2022-04-04", 3000.00, "Dogecoin earnings", 'I', NULL, 009),
+        (026, "2022-04-06", 147.00, "Groceries", 'E', NULL, 003),
+        (027, "2022-04-06", 24.98, "Taco Bell", 'E', NULL, 004),
+        (028, "2022-04-11", 900.00, "Montly rent paid", 'E', NULL, 003),
+        (029, "2022-04-12", 2200.00, "Fixed my AMONGUS car", 'E', NULL, 002),
+        (030, "2022-04-17", 400.00, "Won local Big Chungus tournament", 'I', NULL, 010),
+        (031, "2022-04-19", 13.90, "McDonald", 'E', NULL, 004),
+        (032, "2022-04-23", 2767.55, "College Tuition Payment 3/3", 'E', NULL, 007),
+        (033, "2022-04-24", 6969.69, "Purchased AMONGUS", 'E', NULL, 006),
+        (034, "2022-04-26", 87.80, "Groceries", 'E', NULL, 003);
+        """
+        try:
+            config.cur.execute(insert_cat)
+            config.cur.execute(insert_trans)
+        except:
+            pass
+
         # This container is where we'll stack all the frames for different pages
         # on top of each other, and the one we want to be visible will be
         # raised on top of all the others
+
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for F in (TransactionPage, AddTransactionPage, EditTransactionPage, AnalyticsPage):
+        for F in (TransactionPage.TransactionPage, AddTransactionPage.AddTransactionPage, EditTransactionPage.EditTransactionPage, AnalyticsPage.AnalyticsPage):
             page_name = F.__name__
             frame = F(parent=container, controller=self)
             self.frames[page_name] = frame
@@ -29,217 +154,16 @@ class MainView(tk.Tk):
             # All frames are stacked on top of each other
             # The one on top will be the one visible
             frame.grid(row=0, column=0, sticky="nsew")
-
+        
         self.show_frame("TransactionPage")
+
     def show_frame(self, page_name):
         # Show a frame for the given page name
         frame = self.frames[page_name]
         frame.tkraise()
 
-
-class TransactionPage(tk.Frame):
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        self.controller = controller
-        
-
-        # Establishes this pages UI elements/
-        # Date, description, amount, category
-
-        # Buttons
-        selfButton = tk.Button(self, text="Transactions")
-        analyticsButton = tk.Button(self, text="Analytics")
-        addButton = tk.Button(self, text="Add", command=lambda: controller.show_frame("AddTransactionPage"))
-        editButton = tk.Button(self, text="Edit")
-        deleteButton = tk.Button(self, text="Delete")
-        thisMonthButton = tk.Button(self, text="This Month")
-        
-        # Image Buttons (Left and Right Arrows)
-        # Getting this to work was really dumb
-        # Let's stay away from image UI elements
-        arrowImage = Image.open('resources\\arrow_icon.png')
-        arrowImage = arrowImage.resize((30, 30), Image.ANTIALIAS)
-        arrowImageFlipped = Image.open('resources\\arrow_icon_flipped.png')
-        arrowImageFlipped = arrowImageFlipped.resize((30, 30), Image.ANTIALIAS)
-        arrowIcon = ImageTk.PhotoImage(arrowImage)
-        arrowIconFlipped = ImageTk.PhotoImage(arrowImageFlipped)
-        leftArrowButton = tk.Button(self, image=arrowIcon, borderwidth=0)
-        leftArrowButton.image = arrowIcon
-        rightArrowButton = tk.Button(self, image=arrowIconFlipped, borderwidth=0)
-        rightArrowButton.image = arrowIconFlipped
-
-        # Labels (text)
-        selectedMonthLabel = tk.Label(self, text="February 2022")
-        incomeLabel = tk.Label(self, text="Incomes")
-        expenseLabel = tk.Label(self, text="Expenses")
-        label = tk.Label(self, text="This is Transaction Page")
-
-        # Incomes Treeview
-        columns = ("#1", "#2", "#3", "#4")
-        self.tvIncomes = ttk.Treeview(self, show="headings", height="5", columns=columns)
-        # Do we want a column for TransactionID?
-        self.tvIncomes.heading("#1", text="Date", anchor="center")
-        self.tvIncomes.column("#1", width=80, anchor="center",stretch=True)
-        self.tvIncomes.heading("#2", text="Description", anchor="center")
-        self.tvIncomes.column("#2", width=80, anchor="center",stretch=True)
-        self.tvIncomes.heading("#3", text="Amount", anchor="center")
-        self.tvIncomes.column("#3", width=80, anchor="center",stretch=True)
-        self.tvIncomes.heading("#4", text="Category", anchor="center")
-        self.tvIncomes.column("#4", width=80, anchor="center",stretch=True)
-
-        vsb = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tvIncomes.yview)
-        # TODO Need to place vertical scroll bar using either grid or place
-        # We'll figure that out later
-        self.tvIncomes.configure(yscroll=vsb.set)
-        self.tvIncomes.bind("<<TreeviewSelect>>", self.selectRecordIncome)
-
-        # Expenses Treeview
-        columns = ("#1", "#2", "#3", "#4")
-        self.tvExpenses = ttk.Treeview(self, show="headings", height="5", columns=columns)
-        # Do we want a column for TransactionID?
-        self.tvExpenses.heading("#1", text="Date", anchor="center")
-        self.tvExpenses.column("#1", width=80, anchor="center",stretch=True)
-        self.tvExpenses.heading("#2", text="Description", anchor="center")
-        self.tvExpenses.column("#2", width=80, anchor="center",stretch=True)
-        self.tvExpenses.heading("#3", text="Amount", anchor="center")
-        self.tvExpenses.column("#3", width=80, anchor="center",stretch=True)
-        self.tvExpenses.heading("#4", text="Category", anchor="center")
-        self.tvExpenses.column("#4", width=80, anchor="center",stretch=True)
-
-        vsb = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tvExpenses.yview)
-        # TODO Need to place vertical scroll bar using either grid or place
-        # We'll figure that out later
-        self.tvExpenses.configure(yscroll=vsb.set)
-        self.tvExpenses.bind("<<TreeviewSelect>>", self.selectRecordExpense)
-
-
-        # Establishes layout of above elements
-        # This is bad
-        # TODO make it pretty
-        # Buttons
-        selfButton.grid(row=0, column=0)
-        analyticsButton.grid(row=0, column=1)
-        deleteButton.grid(row=0, column=7)
-        editButton.grid(row=0, column=6)
-        addButton.grid(row=0, column=5)
-        thisMonthButton.grid(row=1, column=5)
-
-        # Image Buttons
-        leftArrowButton.grid(row=1, column=1)
-        rightArrowButton.grid(row=1, column=3)
-
-        # Labels
-        selectedMonthLabel.grid(row=1, column=2)
-        incomeLabel.grid(row=2, column=2)
-        expenseLabel.grid(row=2, column=5)
-        label.grid(row=5, column=5)
-
-        # Treeviews
-        self.tvIncomes.grid(row=3, column=1, columnspan=3)
-        self.tvExpenses.grid(row=3, column=5, columnspan=3)
-
-        self.LoadIncomes()
-        self.LoadExpenses()
-
-
-        # Sets minimun sizes for all columns or rows
-        # Might want to change/get rid of this later
-        #columnCount, rowCount = self.grid_size()
-        #for column in range(columnCount):
-        #    self.grid_columnconfigure(column, minsize=100)
-        #for row in range(rowCount):
-        #    self.grid_rowconfigure(row, minsize=100)
-    
-
-    def selectRecordIncome(self, event):
-        global transactionID
-        transactionID = self.tvIncomes.selection()[0]
-        return transactionID
-    
-    def selectRecordExpense(self, event):
-        global transactionID
-        transactionID = self.tvExpenses.selection()[0]
-        return transactionID
-
-    
-    # When called, loads Income data from database into tvIncomes
-    def LoadIncomes(self):
-        # TODO Ensure connection to database here
-        # Clears the treeview tvIncomes
-        self.tvIncomes.delete(*self.tvIncomes.get_children())
-        # TODO Execute SQL query here
-        rows = bwSQL.incomes
-        TransactionID = ""
-        Date = ""
-        Description = ""
-        Amount = ""
-        Category = ""
-        for row in rows:
-            TransactionID = row[0]
-            Date = row[1]
-            Description = row[2]
-            Amount = row[3]
-            Category = row[4]
-            self.tvIncomes.insert("", 'end', text=TransactionID, values=(Date, Description, Amount, Category))
-
-    # When called, loads Expense data from database into tvExpenses
-    def LoadExpenses(self):
-        # TODO Ensure connection to database here
-        # Clears the treeview tvExpenses
-        self.tvExpenses.delete(*self.tvExpenses.get_children())
-        # TODO Execute SQL query here
-        rows = bwSQL.expenses
-        TransactionID = ""
-        Date = ""
-        Description = ""
-        Amount = ""
-        Category = ""
-        for row in rows:
-            TransactionID = row[0]
-            Date = row[1]
-            Description = row[2]
-            Amount = row[3]
-            Category = row[4]
-            self.tvExpenses.insert("", 'end', text=TransactionID, values=(Date, Description, Amount, Category))
-
-       
-
-class AddTransactionPage(tk.Frame):
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        self.controller = controller
-        
-        transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
-        transactionsButton.grid(row=0, column=0)
-
-        label = tk.Label(self, text="This is Add Transaction Page")
-        label.grid(row=1, column=0)
-
-class EditTransactionPage(tk.Frame):
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        self.controller = controller
-        label = tk.Label(self, text="This is Edit Transaction Page")
-        label.pack(side="top", fill="both", expand=True)
-
-class AnalyticsPage(tk.Frame):
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        self.controller = controller
-        label = tk.Label(self, text="This is Analytics Page")
-        label.pack(side="top", fill="both", expand=True)
-
-        arrowImage = Image.open('resources\\arrow_icon.png')
-        arrowImage = arrowImage.resize((30, 30), Image.ANTIALIAS)
-        arrowImageFlipped = Image.open('resources\\arrow_icon_flipped.png')
-        arrowImageFlipped = arrowImageFlipped.resize((30, 30), Image.ANTIALIAS)
-        arrowIcon = ImageTk.PhotoImage(arrowImage)
-        arrowIconFlipped = ImageTk.PhotoImage(arrowImageFlipped)
-        leftArrowButton = tk.Button(self, image=arrowIcon, borderwidth=0)
-        leftArrowButton.image = arrowIcon
-        rightArrowButton = tk.Button(self, image=arrowIconFlipped, borderwidth=0)
-        rightArrowButton.image = arrowIconFlipped
-        
+    def get_page(self, page_class):
+        return self.frames[page_class]    
 
 if __name__ == "__main__":
     # At some point we can set our own custom icon
@@ -249,3 +173,8 @@ if __name__ == "__main__":
     main.wm_geometry("800x800")
     main.wm_title("Budget Wiz 0.1")
     main.mainloop()
+    
+    
+
+config.conn.commit()
+#config.conn.close()
