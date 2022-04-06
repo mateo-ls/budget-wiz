@@ -63,9 +63,9 @@ class AnalyticsPage(tk.Frame):
         columns = ("#1", "#2")
         self.tvCategoryTotals = ttk.Treeview(self, show="headings", height="5", columns=columns)
         self.tvCategoryTotals.heading("#1", text="Category", anchor="center")
-        self.tvCategoryTotals.column("#1", width=120, anchor="center", stretch=True)
+        self.tvCategoryTotals.column("#1", width=80, anchor="center", stretch=True)
         self.tvCategoryTotals.heading("#2", text="Amount", anchor="center")
-        self.tvCategoryTotals.column("#2", width=120, anchor="center", stretch=True)
+        self.tvCategoryTotals.column("#2", width=80, anchor="center", stretch=True)
         
         vsb = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tvCategoryTotals.yview)
         self.tvCategoryTotals.configure(yscroll=vsb.set)
