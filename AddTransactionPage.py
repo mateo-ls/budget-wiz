@@ -17,7 +17,7 @@ class AddTransactionPage(tk.Frame):
         self.controller = controller
         
 
-        ## UI elements ##
+        ###### UI elements ######
 
         # Buttons
         transactionsButton = tk.Button(self, text="Back to Transactions", command=lambda: controller.show_frame("TransactionPage"))
@@ -31,29 +31,47 @@ class AddTransactionPage(tk.Frame):
         self.reoccurringFlag = BooleanVar()
         reoccuringCheckbutton = tk.Checkbutton(self, text="Reoccurring Monthly?", variable=self.reoccurringFlag, onvalue=1, offvalue=0)
 
-        # Stores radiobutton selection value (I or E) into transactionType string variable
-        self.transactionType = StringVar()
-        self.transactionType.trace("w", self.validateSubmit)
-        incomeRadioButton = tk.Radiobutton(self, text="Income", variable=self.transactionType, value="I")
-        expenseRadioButton = tk.Radiobutton(self, text="Expense", variable=self.transactionType, value="E")
+        # ----- Category Options Dropdown -----
+        categoryOptions = [row[0] for row in config.cur.execute(
+            "select CategoryName from category where IncomeOrExpense = 'I';").fetchall()]
+            # This sets the default categories to Income (check Radiobutton section below)
+        print(categoryOptions)
+        self.categorySelected = StringVar()
+        self.categoryDropdown = tk.OptionMenu(
+            self, 
+            self.categorySelected, 
+            *categoryOptions
+        )
+
+
+        # ----- Radiobutton Selection (I or E) -----
+        # Default radiobutton selected will be 'I'. Therefore, changeCategoryOption will run as 'I' First
+        transactionType = StringVar(None, 'I') # Sets default of string var transactionType = 'I'
+        incomeRadioButton = tk.Radiobutton(
+            self, 
+            text="Income", 
+            variable=transactionType, 
+            value='I',
+            command=lambda:[
+                self.setCategoryOption('I')
+            ]
+        )
+        expenseRadioButton = tk.Radiobutton(
+            self, 
+            text="Expense", 
+            variable=transactionType, 
+            value='E',
+            command=lambda:[
+                self.setCategoryOption('E')
+            ]
+        )
 
         # Entry fields
         dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
         vcmd = (self.register(self.validateNumber))
-
-        self.amountVar = StringVar()
-        self.amountVar.trace("w", self.validateSubmit)
-        amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'), textvariable=self.amountVar)
-
-        self.commentVar = StringVar()
-        self.commentVar.trace("w", self.validateSubmit)
-        commentEntry = Entry(self, text="Comment", textvariable=self.commentVar)
         
-        categoryOptions = [row[0] for row in config.cur.execute("select CategoryName from category;").fetchall()]
-        print(categoryOptions)
-        self.categorySelected = StringVar()
-        self.categorySelected.trace("w", self.validateSubmit)
-        categoryDropdown = OptionMenu(self, self.categorySelected, *categoryOptions)
+        amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
+        commentEntry = Entry(self, text="Comment")
 
         # search caetgoryOptions for self.categorySelected
         # get index number
@@ -82,7 +100,7 @@ class AddTransactionPage(tk.Frame):
         dateCalendarEntry.grid(row=4, column=1)
         amountEntry.grid(row=5, column=1)   
         commentEntry.grid(row=6, column=1, columnspan=2)
-        categoryDropdown.grid(row=3, column=1)
+        self.categoryDropdown.grid(row=3, column=1)
 
         # Labels
         amountLabel.grid(row=5, column=0)
@@ -137,9 +155,9 @@ class AddTransactionPage(tk.Frame):
         """
 
         values = (date, amount, desc, ioe, rid, cid)
+        print(values)
         config.cur.execute(transaction, values)
         config.conn.commit()
-
 
     def submitCategory(transactionType, Name, Description):
         # TODO insert
@@ -147,6 +165,29 @@ class AddTransactionPage(tk.Frame):
         print(Name)
         print(Description)
         return
+
+    def resetCategoryOption(self, options, index=None):
+        # Reset the dropdown menu
+        menu = self.categoryDropdown["menu"]
+        menu.delete(0, "end")
+
+        for string in options:
+            menu.add_command(
+                label=string,
+                command=lambda value=string:
+                    self.categorySelected.set(value)
+        )
+        
+        if index is not None:
+            self.categorySelected.set(options[index])
+
+    def setCategoryOption(self, option):
+        # option will be either 'I' or 'E'
+        grab_categories = """
+        select CategoryName from category where IncomeOrExpense = '{x}';
+        """.format(x = option)
+        categoryOptions = [row[0] for row in config.cur.execute(grab_categories).fetchall()]
+        self.resetCategoryOption(categoryOptions, 0)
     
     def validateNumber(self, P):
         if str.isdigit(P) or str(P) == "":
@@ -155,8 +196,18 @@ class AddTransactionPage(tk.Frame):
             return False
 
     def submitButton(self, date, amount, comment, type, category, catSelect):
-        self.submitTransaction(date, amount, comment, type, 1, category.index(catSelect)+1)
+        query = """
+        select CategoryID from category
+        where CategoryName = "{cat}"
+        """.format(cat = catSelect)
+
+        cid = config.cur.execute(query).fetchall()[0][0]
+
+        self.submitTransaction(date, amount, comment, type, 1, cid)
         page = self.controller.get_page("TransactionPage")
         page.LoadIncomes(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
         page.LoadExpenses(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
         self.controller.show_frame("TransactionPage")
+        # Calculate new net worth based off added transaction
+        page.calculateNetWorth("month")
+        page.calculateNetWorth("total")
