@@ -34,14 +34,11 @@ class TransactionPage(tk.Frame):
             text="Edit",
             command= self.PullAndEdit #, #controller.show_frame("EditTransactionPage")]
         )
+
         deleteButton = tk.Button(
             self, 
             text="Delete",
-            command=lambda:[ # We will need to add the delete function to the delete button
-                self.calculateNetWorth("month"),
-                self.calculateNetWorth("total"),
-                self.deleteSelected
-            ]
+            command=self.deleteSelected
         )
         
 
@@ -214,6 +211,7 @@ class TransactionPage(tk.Frame):
         curItem = self.tvExpenses.identify('item', event.x, event.y)
         config.transactionID = self.tvExpenses.item(curItem, "text")
         #print(config.transactionID)
+
     def calculateNetWorth(self, option):
         if option == "month": # For by-month net worth
             month = config.current_date.strftime('%m')
@@ -234,6 +232,7 @@ class TransactionPage(tk.Frame):
             strftime('%m', trans.InputDate) = '{m}' and
             strftime('%Y', trans.InputDate) = '{y}';
             """.format(m = month, y = year)
+            
         else: # For total net worth
             grab_income = """
             select sum(Amount)
@@ -336,6 +335,8 @@ class TransactionPage(tk.Frame):
         config.conn.commit()
         self.LoadIncomes(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
         self.LoadExpenses(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
+        self.calculateNetWorth("month")
+        self.calculateNetWorth("total")
 
     def PullAndEdit(self):
         page = self.controller.get_page("EditTransactionPage")
