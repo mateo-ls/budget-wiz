@@ -127,7 +127,7 @@ class TransactionPage(tk.Frame):
         self.tvIncomes.configure(yscrollcommand=self.yscrollbar1.set)
         # We'll figure that out later
         # self.tvIncomes.configure(yscroll=vsb.set)
-        self.tvIncomes.bind("<<TreeviewSelect>>", self.selectRecordIncome)
+        self.tvIncomes.bind("<ButtonRelease-1>", self.selectRecordIncome)
 
         # ----- Expenses Treeview ------
         columns = ("#1", "#2", "#3", "#4")
@@ -148,7 +148,7 @@ class TransactionPage(tk.Frame):
         # TODO Need to place vertical scroll bar using either grid or place
         # We'll figure that out later
         # self.tvExpenses.configure(yscroll=vsb.set)
-        self.tvExpenses.bind("<<TreeviewSelect>>", self.selectRecordExpense)
+        self.tvExpenses.bind("<ButtonRelease-1>", self.selectRecordExpense)
 
 
         # ----- Establishes Layout of Above Elements -----
