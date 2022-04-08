@@ -42,6 +42,7 @@ class AddTransactionPage(tk.Frame):
             self.categorySelected, 
             *categoryOptions
         )
+        self.categorySelected.trace("w", self.validateSubmit)
 
 
         # ----- Radiobutton Selection (I or E) -----
@@ -65,20 +66,25 @@ class AddTransactionPage(tk.Frame):
                 self.setCategoryOption('E')
             ]
         )
+        self.transactionType.trace("w", self.validateSubmit)
 
         # Entry fields
         self.dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
         vcmd = (self.register(self.validateNumber))
         
+        self.amountVar = StringVar()
         self.amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
-        self.commentEntry = Entry(self, text="Comment")
+        self.amountVar.trace("w",self.validateSubmit)
+        self.commentVar = StringVar()
+        self.commentEntry = Entry(self, text="Comment", textvariable=self.commentVar)
+        self.commentVar.trace("w",self.validateSubmit)
 
         # search caetgoryOptions for self.categorySelected
         # get index number
         # add 1 add to query
 
         # Submit
-        self.submitB = tk.Button(self, text="Submit", state='normal', command=lambda: self.submitButton(self.dateCalendarEntry.get_date(), self.amountEntry.get(), self.commentEntry.get(), self.transactionType.get(), categoryOptions, self.categorySelected.get()))
+        self.submitB = tk.Button(self, text="Submit", state='disabled', command=lambda: self.submitButton(self.dateCalendarEntry.get_date(), self.amountEntry.get(), self.commentEntry.get(), self.transactionType.get(), categoryOptions, self.categorySelected.get()))
         #
         # Labels
         # TODO add labels
