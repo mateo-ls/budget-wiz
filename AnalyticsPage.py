@@ -9,9 +9,10 @@ from tkcalendar import Calendar, DateEntry
 from PIL import Image, ImageTk
 import tkinter.simpledialog
 from datetime import datetime # For date object
+import calendar
 from dateutil.relativedelta import relativedelta # For date object arithmetic
 
-from pandas import DataFrame
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -78,8 +79,12 @@ class AnalyticsPage(tk.Frame):
         chart_type1 = FigureCanvasTkAgg(figure1, self)
         chart_type1.get_tk_widget().grid(row=3, column=6)
         # This is where you define the dataframe to plot
-        df1 = df1[['First Column','Second Column']].groupby('First Column').sum()
-        df1.plot(kind='line', legend=True, ax=ax1)
+        #df1 = df1[['First Column','Second Column']].groupby('First Column').sum()
+        df1 = pd.DataFrame(columns=['Day', 'Net Worth'])
+        days = range(1, calendar.monthrange(config.current_date.year, config.current_date.month)[1])
+        for d in days:
+            df1 = df1.append({'Day': d, 'Net Worth': self.calculateDayNetWorth(d)}, ignore_index=TRUE)
+        df1.plot(x = 'Day', y = 'Net Worth', kind='line', legend=True, ax=ax1)
         ax1.set_title('Net Worth by Day')
 
         # figure2 = plt.Figure(figsize=(4,3), dpi=100)
@@ -107,3 +112,46 @@ class AnalyticsPage(tk.Frame):
 
         # Treeviews
         self.tvCategoryTotals.grid(row=3, column=1, columnspan=3, rowspan=2)
+
+    def calculateDayNetWorth(self, day):
+        month = config.current_date.strftime('%m')
+        year = config.current_date.strftime('%Y')
+
+        grab_income = """
+        select sum(Amount)
+        from trans 
+        where IncomeOrExpense='I' and
+        strftime('%m', trans.InputDate) = '{m}' and
+        strftime('%Y', trans.InputDate) = '{y}' and
+        strftime('%d', trans.InputDate) = '{d}' ;
+        """.format(m = month, y = year, d = day)
+
+        grab_expense = """
+        select sum(Amount)
+        from trans 
+        where IncomeOrExpense='E' and
+        strftime('%m', trans.InputDate) = '{m}' and
+        strftime('%Y', trans.InputDate) = '{y}' and
+        strftime('%d', trans.InputDate) = '{d}' ;
+        """.format(m = month, y = year, d = day)   
+
+        total_income = 0
+        total_expense = 0
+
+        # Fetch total income and expenses from their respective queries
+        total_income_list = config.cur.execute(grab_income).fetchall()
+        if total_income_list[0][0] != None: # If there are no income entries for that month,
+            # the query will return a list with a None element (same goes for expenses)
+            total_income = total_income_list[0][0]
+        else:
+            total_income = 0
+            
+        total_expense_list = config.cur.execute(grab_expense).fetchall()
+        if total_expense_list[0][0] != None:
+            total_expense = total_expense_list[0][0]
+        else:
+            total_expense = 0
+
+        net_worth = round(total_income - total_expense, 2)
+
+        return net_worth
