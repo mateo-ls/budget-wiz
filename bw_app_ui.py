@@ -171,7 +171,7 @@ if __name__ == "__main__":
     
     main = MainView()
     main.wm_geometry("800x800")
-    main.wm_title("Budget Wiz 0.1")
+    main.wm_title("Budget Wiz 1.0")
     main.mainloop()
     
     
