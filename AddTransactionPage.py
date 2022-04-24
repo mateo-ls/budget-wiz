@@ -31,7 +31,6 @@ class AddTransactionPage(tk.Frame):
         self.reoccurringFlag = BooleanVar()
         reoccuringCheckbutton = tk.Checkbutton(self, text="Reoccurring Monthly?", variable=self.reoccurringFlag, onvalue=1, offvalue=0)
 
-
         # ----- Category Options Dropdown -----
         categoryOptions = [row[0] for row in config.cur.execute(
             "select CategoryName from category where IncomeOrExpense = 'I';").fetchall()]
@@ -43,42 +42,49 @@ class AddTransactionPage(tk.Frame):
             self.categorySelected, 
             *categoryOptions
         )
+        self.categorySelected.trace("w", self.validateSubmit)
 
 
         # ----- Radiobutton Selection (I or E) -----
         # Default radiobutton selected will be 'I'. Therefore, changeCategoryOption will run as 'I' First
-        transactionType = StringVar(None, 'I') # Sets default of string var transactionType = 'I'
-        incomeRadioButton = tk.Radiobutton(
+        self.transactionType = StringVar(None, 'I') # Sets default of string var transactionType = 'I'
+        self.incomeRadioButton = tk.Radiobutton(
             self, 
             text="Income", 
-            variable=transactionType, 
+            variable=self.transactionType, 
             value='I',
             command=lambda:[
                 self.setCategoryOption('I')
             ]
         )
-        expenseRadioButton = tk.Radiobutton(
+        self.expenseRadioButton = tk.Radiobutton(
             self, 
             text="Expense", 
-            variable=transactionType, 
+            variable=self.transactionType, 
             value='E',
             command=lambda:[
                 self.setCategoryOption('E')
             ]
         )
+        self.transactionType.trace("w", self.validateSubmit)
 
         # Entry fields
-        dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
+        self.dateCalendarEntry = DateEntry(self, width=12, background="darkblue", foreground="white", borderwidth=2)
         vcmd = (self.register(self.validateNumber))
-        amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
-        commentEntry = Entry(self, text="Comment")
+        
+        self.amountVar = StringVar()
+        self.amountEntry = Entry(self, text="Amount", validate="all", validatecommand=(vcmd, '%P'))
+        self.amountVar.trace("w",self.validateSubmit)
+        self.commentVar = StringVar()
+        self.commentEntry = Entry(self, text="Comment", textvariable=self.commentVar)
+        self.commentVar.trace("w",self.validateSubmit)
 
         # search caetgoryOptions for self.categorySelected
         # get index number
         # add 1 add to query
 
         # Submit
-        submitB = tk.Button(self, text="Submit", command=lambda: self.submitButton(dateCalendarEntry.get_date(), amountEntry.get(), commentEntry.get(), transactionType.get(), categoryOptions, self.categorySelected.get()))
+        self.submitB = tk.Button(self, text="Submit", state='disabled', command=lambda: self.submitButton(self.dateCalendarEntry.get_date(), self.amountEntry.get(), self.commentEntry.get(), self.transactionType.get(), categoryOptions, self.categorySelected.get()))
         #
         # Labels
         # TODO add labels
@@ -92,14 +98,14 @@ class AddTransactionPage(tk.Frame):
         transactionsButton.grid(row=0, column=0)
         addNewCategoryButton.grid(row=3, column=2)
         self.submitB.grid(row=7, column=1)
-        incomeRadioButton.grid(row=1, column=1)
-        expenseRadioButton.grid(row=1, column=2)
+        self.incomeRadioButton.grid(row=1, column=1)
+        self.expenseRadioButton.grid(row=1, column=2)
         reoccuringCheckbutton.grid(row=2, column=1)
 
         # Entry fields
-        dateCalendarEntry.grid(row=4, column=1)
-        amountEntry.grid(row=5, column=1)   
-        commentEntry.grid(row=6, column=1, columnspan=2)
+        self.dateCalendarEntry.grid(row=4, column=1)
+        self.amountEntry.grid(row=5, column=1)   
+        self.commentEntry.grid(row=6, column=1, columnspan=2)
         self.categoryDropdown.grid(row=3, column=1)
 
         # Labels
@@ -109,8 +115,8 @@ class AddTransactionPage(tk.Frame):
 
     def validateSubmit(self, *args):
         a = self.transactionType.get()
-        b = self.amountVar.get()
-        c = self.commentVar.get()
+        b = self.amountEntry.get()
+        c = self.commentEntry.get()
         d = self.categorySelected.get()
         if a and b and c and d:
             self.submitB.config(state='normal')

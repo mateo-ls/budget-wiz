@@ -1,3 +1,5 @@
+*.pyc
+dw_data.db
 # pycache Directory #
 #####################
 __pycache__/
