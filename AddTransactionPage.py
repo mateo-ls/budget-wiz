@@ -129,7 +129,7 @@ class AddTransactionPage(tk.Frame):
         # TODO INSERT into category table
         # answer = AddCategoryDialog()
         global pop
-        pop = Toplevel(bw_app_ui.main)
+        pop = Toplevel()
         pop.title("Add New Category")
         pop.geometry("500x350")
         transactionType = StringVar()

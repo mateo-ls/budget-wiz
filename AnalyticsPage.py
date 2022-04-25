@@ -9,9 +9,10 @@ from tkcalendar import Calendar, DateEntry
 from PIL import Image, ImageTk
 import tkinter.simpledialog
 from datetime import datetime # For date object
+import calendar
 from dateutil.relativedelta import relativedelta # For date object arithmetic
 
-from pandas import DataFrame
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -63,9 +64,9 @@ class AnalyticsPage(tk.Frame):
         columns = ("#1", "#2")
         self.tvCategoryTotals = ttk.Treeview(self, show="headings", height="5", columns=columns)
         self.tvCategoryTotals.heading("#1", text="Category", anchor="center")
-        self.tvCategoryTotals.column("#1", width=120, anchor="center", stretch=True)
+        self.tvCategoryTotals.column("#1", width=80, anchor="center", stretch=True)
         self.tvCategoryTotals.heading("#2", text="Amount", anchor="center")
-        self.tvCategoryTotals.column("#2", width=120, anchor="center", stretch=True)
+        self.tvCategoryTotals.column("#2", width=80, anchor="center", stretch=True)
         
         vsb = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tvCategoryTotals.yview)
         self.tvCategoryTotals.configure(yscroll=vsb.set)
@@ -73,13 +74,7 @@ class AnalyticsPage(tk.Frame):
         # self.tvCategoryTotals.bind("<<TreeviewSelect>>", s)
 
         # Charts
-        # figure1 = plt.Figure(figsize=(4,3), dpi=100)
-        # ax1 = figure1.add_subplot(111)
-        # chart_type1 = FigureCanvasTkAgg(figure1, self)
-        # chart_type1.get_tk_widget().grid(row=3, column=6)
-        # df1 = df1[['First Column','Second Column']].groupby('First Column').sum()
-        # df1.plot(kind='CHART TYPE', legend=True, ax=ax1)
-        # ax1.set_title('CHART TITLE')
+        self.plotGraph()
 
         # figure2 = plt.Figure(figsize=(4,3), dpi=100)
         # ax2 = figure2.add_subplot(111)
@@ -106,3 +101,81 @@ class AnalyticsPage(tk.Frame):
 
         # Treeviews
         self.tvCategoryTotals.grid(row=3, column=1, columnspan=3, rowspan=2)
+    
+    def changeMonth(self, direction):
+        if direction == "left": # If left arrow is pressed (go back a month)
+            config.current_date = config.current_date - relativedelta(months=1)
+        elif direction == "right": # If right arrow is pressed (go forward a month)
+            config.current_date = config.current_date + relativedelta(months=1)
+        else: 
+            config.current_date = datetime.now()
+
+        # Update the selectedMonthLabel and Incomes & Expenses Table
+        m_y = f"{config.current_date.strftime('%B')} {config.current_date.strftime('%Y')}"
+        self.selectedMonthLabel["text"] = m_y
+        # This is where we'll need to update the category box and the graphs
+        # Clears the dataframe
+        # self.df1 = self.df1[0:0]
+        # days = range(1, calendar.monthrange(config.current_date.year, config.current_date.month)[1])
+        # for d in days:
+        #     self.df1 = self.df1.append({'Day': d, 'Net Worth': self.calculateDayNetWorth(d)}, ignore_index=TRUE)
+        # self.df1.plot(x = 'Day', y = 'Net Worth', kind='line', legend=True, ax=self.ax1)
+        self.plotGraph()
+    
+    def calculateDayNetWorth(self, day):
+        month = config.current_date.strftime('%m')
+        year = config.current_date.strftime('%Y')
+
+        grab_income = """
+        select sum(Amount)
+        from trans 
+        where IncomeOrExpense='I' and
+        strftime('%m', trans.InputDate) = '{m}' and
+        strftime('%Y', trans.InputDate) = '{y}' and
+        cast(strftime('%d', trans.InputDate) as decimal) <= {d} ;
+        """.format(m = month, y = year, d = day)
+
+        grab_expense = """
+        select sum(Amount)
+        from trans 
+        where IncomeOrExpense='E' and
+        strftime('%m', trans.InputDate) = '{m}' and
+        strftime('%Y', trans.InputDate) = '{y}' and
+        cast(strftime('%d', trans.InputDate) as decimal) <= {d} ;
+        """.format(m = month, y = year, d = day)
+        print(grab_expense)
+
+        total_income = 0
+        total_expense = 0
+
+        # Fetch total income and expenses from their respective queries
+        total_income_list = config.cur.execute(grab_income).fetchall()
+        if total_income_list[0][0] != None: # If there are no income entries for that month,
+            # the query will return a list with a None element (same goes for expenses)
+            total_income = total_income_list[0][0]
+        else:
+            total_income = 0
+            
+        total_expense_list = config.cur.execute(grab_expense).fetchall()
+        if total_expense_list[0][0] != None:
+            total_expense = total_expense_list[0][0]
+        else:
+            total_expense = 0
+
+        net_worth = round(total_income - total_expense, 2)
+
+        return net_worth
+
+    def plotGraph(self):
+        self.figure1 = plt.Figure(figsize=(4,3), dpi=100)
+        self.ax1 = self.figure1.add_subplot(111)
+        chart_type1 = FigureCanvasTkAgg(self.figure1, self)
+        chart_type1.get_tk_widget().grid(row=3, column=6)
+        # This is where you define the dataframe to plot
+        #df1 = df1[['First Column','Second Column']].groupby('First Column').sum()
+        self.df1 = pd.DataFrame(columns=['Day', 'Month Net Worth'])
+        days = range(1, calendar.monthrange(config.current_date.year, config.current_date.month)[1])
+        for d in days:
+            self.df1 = self.df1.append({'Day': d, 'Month Net Worth': self.calculateDayNetWorth(d)}, ignore_index=TRUE)
+        self.df1.plot(x = 'Day', y = 'Month Net Worth', kind='line', legend=True, ax=self.ax1)
+        self.ax1.set_title('Month Net Worth by Day')

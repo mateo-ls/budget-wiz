@@ -1,4 +1,3 @@
-from turtle import width
 import bw_app_ui
 import config
 
@@ -121,10 +120,8 @@ class TransactionPage(tk.Frame):
         self.tvIncomes.heading("#4", text="Category", anchor="center")
         self.tvIncomes.column("#4", width=80, anchor="center",stretch=True)
 
-        # vsb = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tvIncomes.yview)
+        vsb = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tvIncomes.yview)
         # TODO Need to place vertical scroll bar using either grid or place
-        self.yscrollbar1 = ttk.Scrollbar(self, orient='vertical', command=self.tvIncomes.yview)
-        self.tvIncomes.configure(yscrollcommand=self.yscrollbar1.set)
         # We'll figure that out later
         # self.tvIncomes.configure(yscroll=vsb.set)
         self.tvIncomes.bind("<ButtonRelease-1>", self.selectRecordIncome)
@@ -142,9 +139,7 @@ class TransactionPage(tk.Frame):
         self.tvExpenses.heading("#4", text="Category", anchor="center")
         self.tvExpenses.column("#4", width=80, anchor="center",stretch=True)
 
-        # vsb = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tvExpenses.yview)
-        self.yscrollbar2 = ttk.Scrollbar(self, orient='vertical', command=self.tvExpenses.yview)
-        self.tvExpenses.configure(yscrollcommand=self.yscrollbar2.set)
+        vsb = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tvExpenses.yview)
         # TODO Need to place vertical scroll bar using either grid or place
         # We'll figure that out later
         # self.tvExpenses.configure(yscroll=vsb.set)
@@ -173,15 +168,8 @@ class TransactionPage(tk.Frame):
         self.netWorthLabelTotal.grid(row=4, column=3)
 
         # Treeviews
-        self.tvIncomes.grid(row=3, column=1, columnspan=3, sticky='nsew')
-        self.tvExpenses.grid(row=3, column=5, columnspan=3, sticky='nsew')
-
-        # Scrollbars
-        self.columnconfigure(4, minsize=40)
-        self.yscrollbar1.grid(row=3, column=4, sticky='nsw')
-        self.yscrollbar1.configure(command=self.tvIncomes.yview)
-        self.yscrollbar2.grid(row=3, column=9, sticky='nse')
-        self.yscrollbar2.configure(command=self.tvExpenses.yview)
+        self.tvIncomes.grid(row=3, column=1, columnspan=3)
+        self.tvExpenses.grid(row=3, column=5, columnspan=3)
 
         # These two are needed for the initial loading to the Transactions Page
         self.LoadIncomes(config.current_date.strftime('%m'), config.current_date.strftime('%Y'))
