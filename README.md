@@ -15,12 +15,8 @@ Basic budgeting application with analytics created to satisfy requirements for C
 
 ## Instructions on how to run:
 1) Insure that all dependencies are installed (see above).
-2) Clone repository on your CLI using `git clone https://github.com/mateo-ls/budget-wiz`. (Works on most OS)
-OR
-2) Download ZIP of repository and unzip into a directory.
-3) Open folder in Visual Studio Code and click the Run button in the top right corner with `bw_app_ui.py` selected.
-OR
-3) Open your command line interface, and enter in `python3 <path-to-bw_app_ui.py>`.
+2) Clone repository on your CLI using `git clone https://github.com/mateo-ls/budget-wiz`. (Works on most OS) _OR_ Download ZIP of repository and unzip into a directory.
+3) Open folder in Visual Studio Code and click the Run button in the top right corner with `bw_app_ui.py` selected. _OR_ Open your command line interface, and enter in `python3 <path-to-bw_app_ui.py>`.
 4) Enjoy!
 
 Note: Please contact `mateo.d.langstonsmith@biola.edu`, `aaron.b.chan@biola.edu`, or `aaron.j.georgeson@biola.edu` with any questions.
