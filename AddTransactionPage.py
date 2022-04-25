@@ -124,7 +124,7 @@ class AddTransactionPage(tk.Frame):
             self.submitB.config(state='disabled')
     
     # Should run when addNewCategoryButton is pressed
-    def addCategory(event = None):
+    def addCategory(self, event = None):
         # TODO pull category field
         # TODO INSERT into category table
         # answer = AddCategoryDialog()
@@ -132,21 +132,43 @@ class AddTransactionPage(tk.Frame):
         pop = Toplevel()
         pop.title("Add New Category")
         pop.geometry("500x350")
-        transactionType = StringVar()
-        tk.Radiobutton(pop, text="Income", variable=transactionType, value="I").grid(row=0, column=0)
-        tk.Radiobutton(pop, text="Expense", variable=transactionType, value="E").grid(row=0, column=1)
+        transactionType = StringVar(None, "I") # Sets the default value to I
+        tk.Radiobutton(
+            pop, 
+            text="Income", 
+            variable=transactionType, 
+            value="I"
+        ).grid(row=0, column=0)
+        tk.Radiobutton(
+            pop, 
+            text="Expense", 
+            variable=transactionType, 
+            value="E"
+        ).grid(row=0, column=1)
 
-        tk.Label(pop, text="Name:").grid(row=1, column=0)
+        tk.Label(
+            pop, 
+            text="Name:").grid(row=1, column=0)
         categoryNameEntry = Entry(pop)
         categoryNameEntry.grid(row=1, column=1, columnspan=2)
-
-        tk.Label(pop, text="Description:").grid(row=2, column=0)
+        tk.Label(
+            pop, 
+            text="Description:").grid(row=2, column=0)
         categoryDescriptionEntry = Entry(pop)
         categoryDescriptionEntry.grid(row=2, column=1, columnspan=2)
 
-        addCategorySubmitButton = tk.Button(pop, text="Submit",
-         command=lambda: [AddTransactionPage.submitCategory(transactionType.get(), categoryNameEntry.get(),
-          categoryDescriptionEntry.get()), pop.destroy()])
+        addCategorySubmitButton = tk.Button(
+            pop, 
+            text="Submit",
+            command=lambda: [
+                AddTransactionPage.submitCategory(transactionType.get(), 
+                    categoryNameEntry.get(),
+                    categoryDescriptionEntry.get()
+                ), 
+                self.setCategoryOption(transactionType.get()),
+                pop.destroy() # Deletes the Add Category Page
+            ]
+        )
         addCategorySubmitButton.grid(row=3, column=1)
 
     # Should run when submitButton() is pressed
@@ -166,10 +188,15 @@ class AddTransactionPage(tk.Frame):
         config.conn.commit()
 
     def submitCategory(transactionType, Name, Description):
-        # TODO insert
-        print(transactionType)
-        print(Name)
-        print(Description)
+        # query
+        transaction = """
+        INSERT into category (CategoryName, Description, IncomeOrExpense)
+        values (?, ?, ?); 
+        """
+        
+        values = (Name, Description, transactionType)
+        config.cur.execute(transaction, values)
+        config.conn.commit()
         return
 
     def resetCategoryOption(self, options, index=None):
