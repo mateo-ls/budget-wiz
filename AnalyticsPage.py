@@ -74,18 +74,18 @@ class AnalyticsPage(tk.Frame):
         # self.tvCategoryTotals.bind("<<TreeviewSelect>>", s)
 
         # Charts
-        figure1 = plt.Figure(figsize=(4,3), dpi=100)
-        ax1 = figure1.add_subplot(111)
-        chart_type1 = FigureCanvasTkAgg(figure1, self)
+        self.figure1 = plt.Figure(figsize=(4,3), dpi=100)
+        self.ax1 = self.figure1.add_subplot(111)
+        chart_type1 = FigureCanvasTkAgg(self.figure1, self)
         chart_type1.get_tk_widget().grid(row=3, column=6)
         # This is where you define the dataframe to plot
         #df1 = df1[['First Column','Second Column']].groupby('First Column').sum()
-        df1 = pd.DataFrame(columns=['Day', 'Net Worth'])
+        self.df1 = pd.DataFrame(columns=['Day', 'Net Worth'])
         days = range(1, calendar.monthrange(config.current_date.year, config.current_date.month)[1])
         for d in days:
-            df1 = df1.append({'Day': d, 'Net Worth': self.calculateDayNetWorth(d)}, ignore_index=TRUE)
-        df1.plot(x = 'Day', y = 'Net Worth', kind='line', legend=True, ax=ax1)
-        ax1.set_title('Net Worth by Day')
+            self.df1 = self.df1.append({'Day': d, 'Net Worth': self.calculateDayNetWorth(d)}, ignore_index=TRUE)
+        self.df1.plot(x = 'Day', y = 'Net Worth', kind='line', legend=True, ax=self.ax1)
+        self.ax1.set_title('Net Worth by Day')
 
         # figure2 = plt.Figure(figsize=(4,3), dpi=100)
         # ax2 = figure2.add_subplot(111)
@@ -112,7 +112,26 @@ class AnalyticsPage(tk.Frame):
 
         # Treeviews
         self.tvCategoryTotals.grid(row=3, column=1, columnspan=3, rowspan=2)
+    
+    def changeMonth(self, direction):
+        if direction == "left": # If left arrow is pressed (go back a month)
+            config.current_date = config.current_date - relativedelta(months=1)
+        elif direction == "right": # If right arrow is pressed (go forward a month)
+            config.current_date = config.current_date + relativedelta(months=1)
+        else: 
+            config.current_date = datetime.now()
 
+        # Update the selectedMonthLabel and Incomes & Expenses Table
+        m_y = f"{config.current_date.strftime('%B')} {config.current_date.strftime('%Y')}"
+        self.selectedMonthLabel["text"] = m_y
+        # This is where we'll need to update the category box and the graphs
+        # Clears the dataframe
+        self.df1 = self.df1[0:0]
+        days = range(1, calendar.monthrange(config.current_date.year, config.current_date.month)[1])
+        for d in days:
+            self.df1 = self.df1.append({'Day': d, 'Net Worth': self.calculateDayNetWorth(d)}, ignore_index=TRUE)
+        self.df1.plot(x = 'Day', y = 'Net Worth', kind='line', legend=True, ax=self.ax1)
+    
     def calculateDayNetWorth(self, day):
         month = config.current_date.strftime('%m')
         year = config.current_date.strftime('%Y')
