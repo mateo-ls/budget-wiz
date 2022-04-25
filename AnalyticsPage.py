@@ -132,7 +132,7 @@ class AnalyticsPage(tk.Frame):
         where IncomeOrExpense='I' and
         strftime('%m', trans.InputDate) = '{m}' and
         strftime('%Y', trans.InputDate) = '{y}' and
-        strftime('%d', trans.InputDate) = '{d}' ;
+        cast(strftime('%d', trans.InputDate) as decimal) <= {d} ;
         """.format(m = month, y = year, d = day)
 
         grab_expense = """
@@ -141,8 +141,9 @@ class AnalyticsPage(tk.Frame):
         where IncomeOrExpense='E' and
         strftime('%m', trans.InputDate) = '{m}' and
         strftime('%Y', trans.InputDate) = '{y}' and
-        strftime('%d', trans.InputDate) = '{d}' ;
-        """.format(m = month, y = year, d = day)   
+        cast(strftime('%d', trans.InputDate) as decimal) <= {d} ;
+        """.format(m = month, y = year, d = day)
+        print(grab_expense)
 
         total_income = 0
         total_expense = 0
@@ -172,9 +173,9 @@ class AnalyticsPage(tk.Frame):
         chart_type1.get_tk_widget().grid(row=3, column=6)
         # This is where you define the dataframe to plot
         #df1 = df1[['First Column','Second Column']].groupby('First Column').sum()
-        self.df1 = pd.DataFrame(columns=['Day', 'Net Worth'])
+        self.df1 = pd.DataFrame(columns=['Day', 'Month Net Worth'])
         days = range(1, calendar.monthrange(config.current_date.year, config.current_date.month)[1])
         for d in days:
-            self.df1 = self.df1.append({'Day': d, 'Net Worth': self.calculateDayNetWorth(d)}, ignore_index=TRUE)
-        self.df1.plot(x = 'Day', y = 'Net Worth', kind='line', legend=True, ax=self.ax1)
-        self.ax1.set_title('Net Worth by Day')
+            self.df1 = self.df1.append({'Day': d, 'Month Net Worth': self.calculateDayNetWorth(d)}, ignore_index=TRUE)
+        self.df1.plot(x = 'Day', y = 'Month Net Worth', kind='line', legend=True, ax=self.ax1)
+        self.ax1.set_title('Month Net Worth by Day')
